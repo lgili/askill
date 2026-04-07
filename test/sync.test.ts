@@ -4,7 +4,8 @@ import path from "node:path";
 import test, { type TestContext } from "node:test";
 import assert from "node:assert/strict";
 
-import { pathExists, writeJson, writeText } from "../src/fs.js";
+import { getStatePaths } from "../src/config.js";
+import { pathExists, writeText } from "../src/fs.js";
 import {
   getInstalledSkills,
   initProject,
@@ -13,38 +14,10 @@ import {
   syncInstalledSkills,
   updateInstalledSkills,
 } from "../src/install.js";
+import { loadInstalledSkillDocuments, syncAdapterFiles } from "../src/sync.js";
 import type { CatalogData, LockfileState } from "../src/types.js";
 
-async function fakeDownloader(
-  skill: { id: string; name: string; version: string },
-  catalog: { repo: string },
-  stateDir: string,
-): Promise<void> {
-  const skillDir = path.join(stateDir, skill.id);
-  await fs.mkdir(path.join(skillDir, "tools"), { recursive: true });
-  await writeText(
-    path.join(skillDir, "SKILL.md"),
-    [
-      "---",
-      'description: "frontmatter temporario"',
-      "---",
-      "",
-      `# ${skill.name}`,
-      "",
-      `Use esta skill a partir de ${catalog.repo}.`,
-      "",
-      "- Regra 1",
-    ].join("\n"),
-  );
-  await writeJson(path.join(skillDir, "skill.json"), {
-    id: skill.id,
-    name: skill.name,
-    version: skill.version,
-    entry: "SKILL.md",
-  });
-}
-
-function createCatalog(): CatalogData {
+function createCatalog(version = "1.0.0"): CatalogData {
   return {
     formatVersion: 1,
     repo: "example/skills",
@@ -53,7 +26,7 @@ function createCatalog(): CatalogData {
       {
         id: "git-master",
         name: "Git Master",
-        version: "1.0.0",
+        version,
         description: "Fluxo Git",
         author: "example",
         tags: ["git"],
@@ -66,18 +39,65 @@ function createCatalog(): CatalogData {
   };
 }
 
-async function setupInstalledSkill(cwd: string, options: { adapter?: string } = {}) {
+function createDownloader(options: { autoInject?: boolean } = {}) {
+  return async function fakeDownloader(
+    skill: { id: string; name: string; version: string },
+    catalog: { repo: string },
+    skillsDir: string,
+  ): Promise<void> {
+    const skillDir = path.join(skillsDir, skill.id);
+    await fs.mkdir(path.join(skillDir, "tools"), { recursive: true });
+    await fs.writeFile(
+      path.join(skillDir, "SKILL.md"),
+      [
+        "---",
+        'description: "frontmatter temporario"',
+        ...(options.autoInject ? ["autoInject: true", 'activationPrompt: "Sempre lembre de aplicar esta skill."'] : []),
+        "---",
+        "",
+        `# ${skill.name}`,
+        "",
+        `Use esta skill a partir de ${catalog.repo}.`,
+        "",
+        "- Regra 1",
+      ].join("\n"),
+      "utf8",
+    );
+    await fs.writeFile(
+      path.join(skillDir, "skill.json"),
+      JSON.stringify(
+        {
+          id: skill.id,
+          name: skill.name,
+          version: skill.version,
+          entry: "SKILL.md",
+        },
+        null,
+        2,
+      ),
+      "utf8",
+    );
+  };
+}
+
+async function setupInstalledSkill(
+  cwd: string,
+  options: { adapter?: string; autoInject?: boolean; autoSync?: boolean } = {},
+): Promise<void> {
   await initProject({
     cwd,
     repo: "example/skills",
     adapter: options.adapter,
+    autoSync: options.autoSync,
     now: () => "2026-04-06T00:00:00.000Z",
   });
 
   await installSkills(["git-master"], {
     cwd,
     catalogLoader: async () => createCatalog(),
-    downloader: fakeDownloader,
+    downloader: createDownloader(
+      options.autoInject !== undefined ? { autoInject: options.autoInject } : {},
+    ),
     now: () => "2026-04-06T00:10:00.000Z",
   });
 }
@@ -87,7 +107,16 @@ function assertState(state: LockfileState | null): LockfileState {
   return state;
 }
 
-test("syncInstalledSkills preserva conteudo manual em AGENTS.md", async (t: TestContext) => {
+async function isSymlink(targetPath: string): Promise<boolean> {
+  try {
+    const stats = await fs.lstat(targetPath);
+    return stats.isSymbolicLink();
+  } catch {
+    return false;
+  }
+}
+
+test("syncInstalledSkills preserva conteudo manual e injeta auto-inject em AGENTS.md", async (t: TestContext) => {
   const cwd = await fs.mkdtemp(path.join(os.tmpdir(), "skillex-sync-codex-"));
   t.after(async () => {
     await fs.rm(cwd, { recursive: true, force: true });
@@ -109,7 +138,7 @@ test("syncInstalledSkills preserva conteudo manual em AGENTS.md", async (t: Test
     ].join("\n"),
   );
 
-  await setupInstalledSkill(cwd);
+  await setupInstalledSkill(cwd, { adapter: "codex", autoInject: true });
   const result = await syncInstalledSkills({
     cwd,
     now: () => "2026-04-06T00:20:00.000Z",
@@ -117,128 +146,48 @@ test("syncInstalledSkills preserva conteudo manual em AGENTS.md", async (t: Test
 
   assert.equal(result.sync.adapter, "codex");
   assert.equal(result.sync.targetPath, "AGENTS.md");
+  assert.equal(result.syncMode, "copy");
 
   const content = await fs.readFile(path.join(cwd, "AGENTS.md"), "utf8");
   assert.match(content, /# Manual/);
   assert.match(content, /Depois do bloco/);
   assert.match(content, /## Skillex Managed Skills/);
   assert.match(content, /<!-- SKILLEX:START -->/);
-  assert.match(content, /<!-- SKILLEX:END -->/);
-  assert.doesNotMatch(content, /<!-- ASKILL:START -->/);
-  assert.match(content, /### Git Master \(`git-master@1\.0\.0`\)/);
-  assert.match(content, /Use esta skill a partir de example\/skills\./);
-  assert.doesNotMatch(content, /^description:/m);
-  assert.doesNotMatch(content, /^# Git Master$/m);
-
-  const state = assertState(await getInstalledSkills({ cwd }));
-  assert.equal(state.adapters.active, "codex");
-  assert.ok(state.sync);
-  assert.equal(state.sync.adapter, "codex");
-  assert.equal(state.sync.targetPath, "AGENTS.md");
+  assert.match(content, /<!-- SKILLEX:AUTO-INJECT:START -->/);
+  assert.match(content, /Sempre lembre de aplicar esta skill\./);
 });
 
-test("syncInstalledSkills preserva conteudo manual em copilot-instructions", async (t: TestContext) => {
-  const cwd = await fs.mkdtemp(path.join(os.tmpdir(), "skillex-sync-copilot-"));
+test("syncInstalledSkills remove bloco auto-inject quando nao ha skills elegiveis", async (t: TestContext) => {
+  const cwd = await fs.mkdtemp(path.join(os.tmpdir(), "skillex-sync-remove-auto-"));
   t.after(async () => {
     await fs.rm(cwd, { recursive: true, force: true });
   });
 
-  await fs.mkdir(path.join(cwd, ".github"), { recursive: true });
-  await writeText(
-    path.join(cwd, ".github", "copilot-instructions.md"),
-    [
-      "# Manual Copilot",
-      "",
-      "Regras do repositorio.",
-      "",
-    ].join("\n"),
-  );
-
-  await setupInstalledSkill(cwd);
-  const result = await syncInstalledSkills({
+  await setupInstalledSkill(cwd, { adapter: "codex", autoInject: true });
+  await syncInstalledSkills({
     cwd,
     now: () => "2026-04-06T00:20:00.000Z",
   });
-
-  assert.equal(result.sync.adapter, "copilot");
-  assert.equal(result.sync.targetPath, ".github/copilot-instructions.md");
-
-  const content = await fs.readFile(path.join(cwd, ".github", "copilot-instructions.md"), "utf8");
-  assert.match(content, /# Manual Copilot/);
-  assert.match(content, /## Skillex Managed Skills/);
-  assert.match(content, /<!-- SKILLEX:START -->/);
-});
-
-test("syncInstalledSkills preserva conteudo manual em CLAUDE.md", async (t: TestContext) => {
-  const cwd = await fs.mkdtemp(path.join(os.tmpdir(), "skillex-sync-claude-"));
-  t.after(async () => {
-    await fs.rm(cwd, { recursive: true, force: true });
+  await removeSkills(["git-master"], {
+    cwd,
+    now: () => "2026-04-06T00:30:00.000Z",
   });
 
-  await writeText(
-    path.join(cwd, "CLAUDE.md"),
-    [
-      "# Manual Claude",
-      "",
-      "Contexto do projeto.",
-      "",
-    ].join("\n"),
-  );
-
-  await setupInstalledSkill(cwd);
   const result = await syncInstalledSkills({
     cwd,
-    now: () => "2026-04-06T00:20:00.000Z",
+    now: () => "2026-04-06T00:40:00.000Z",
   });
 
-  assert.equal(result.sync.adapter, "claude");
-  assert.equal(result.sync.targetPath, "CLAUDE.md");
-
-  const content = await fs.readFile(path.join(cwd, "CLAUDE.md"), "utf8");
-  assert.match(content, /# Manual Claude/);
-  assert.match(content, /## Skillex Managed Skills/);
-  assert.match(content, /<!-- SKILLEX:START -->/);
+  assert.equal(result.syncMode, "copy");
+  const content = await fs.readFile(path.join(cwd, "AGENTS.md"), "utf8");
+  assert.doesNotMatch(content, /SKILLEX:AUTO-INJECT/);
 });
 
-test("syncInstalledSkills preserva conteudo manual em GEMINI.md", async (t: TestContext) => {
-  const cwd = await fs.mkdtemp(path.join(os.tmpdir(), "skillex-sync-gemini-"));
-  t.after(async () => {
-    await fs.rm(cwd, { recursive: true, force: true });
-  });
-
-  await writeText(
-    path.join(cwd, "GEMINI.md"),
-    [
-      "# Manual Gemini",
-      "",
-      "Padroes do repositorio.",
-      "",
-    ].join("\n"),
-  );
-
-  await setupInstalledSkill(cwd);
-  const result = await syncInstalledSkills({
-    cwd,
-    now: () => "2026-04-06T00:20:00.000Z",
-  });
-
-  assert.equal(result.sync.adapter, "gemini");
-  assert.equal(result.sync.targetPath, "GEMINI.md");
-
-  const content = await fs.readFile(path.join(cwd, "GEMINI.md"), "utf8");
-  assert.match(content, /# Manual Gemini/);
-  assert.match(content, /## Skillex Managed Skills/);
-  assert.match(content, /<!-- SKILLEX:START -->/);
-});
-
-test("syncInstalledSkills escreve arquivo dedicado para cline", async (t: TestContext) => {
+test("syncInstalledSkills cria symlink para adapters de arquivo dedicado por padrao", async (t: TestContext) => {
   const cwd = await fs.mkdtemp(path.join(os.tmpdir(), "skillex-sync-cline-"));
   t.after(async () => {
     await fs.rm(cwd, { recursive: true, force: true });
   });
-
-  await fs.mkdir(path.join(cwd, ".clinerules"), { recursive: true });
-  await writeText(path.join(cwd, ".clinerules", "askill-skills.md"), "legado\n");
 
   await setupInstalledSkill(cwd, { adapter: "codex" });
   const result = await syncInstalledSkills({
@@ -247,23 +196,21 @@ test("syncInstalledSkills escreve arquivo dedicado para cline", async (t: TestCo
     now: () => "2026-04-06T00:20:00.000Z",
   });
 
+  const targetPath = path.join(cwd, ".clinerules", "skillex-skills.md");
   assert.equal(result.sync.adapter, "cline");
-  assert.equal(result.sync.targetPath, ".clinerules/skillex-skills.md");
-  assert.equal(await pathExists(path.join(cwd, ".clinerules", "skillex-skills.md")), true);
-  assert.equal(await pathExists(path.join(cwd, ".clinerules", "askill-skills.md")), false);
+  assert.equal(result.syncMode, "symlink");
+  assert.equal(await pathExists(targetPath), true);
+  assert.equal(await isSymlink(targetPath), true);
 
-  const content = await fs.readFile(path.join(cwd, ".clinerules", "skillex-skills.md"), "utf8");
-  assert.match(content, /## Skillex Managed Skills/);
-  assert.match(content, /### Git Master \(`git-master@1\.0\.0`\)/);
+  const linkTarget = await fs.readlink(targetPath);
+  assert.match(linkTarget, /\.agent-skills\/generated\/cline\/skillex-skills\.md$/);
 
   const state = assertState(await getInstalledSkills({ cwd }));
-  assert.equal(state.adapters.active, "codex");
-  assert.ok(state.sync);
-  assert.equal(state.sync.adapter, "cline");
+  assert.equal(state.syncMode, "symlink");
 });
 
-test("syncInstalledSkills escreve arquivo MDC para cursor", async (t: TestContext) => {
-  const cwd = await fs.mkdtemp(path.join(os.tmpdir(), "skillex-sync-cursor-"));
+test("syncInstalledSkills aceita --mode copy e grava arquivo regular", async (t: TestContext) => {
+  const cwd = await fs.mkdtemp(path.join(os.tmpdir(), "skillex-sync-copy-"));
   t.after(async () => {
     await fs.rm(cwd, { recursive: true, force: true });
   });
@@ -271,64 +218,69 @@ test("syncInstalledSkills escreve arquivo MDC para cursor", async (t: TestContex
   await setupInstalledSkill(cwd, { adapter: "codex" });
   const result = await syncInstalledSkills({
     cwd,
-    adapter: "cursor",
+    adapter: "cline",
+    mode: "copy",
     now: () => "2026-04-06T00:20:00.000Z",
   });
 
-  assert.equal(result.sync.adapter, "cursor");
-  assert.equal(result.sync.targetPath, ".cursor/rules/skillex-skills.mdc");
+  const targetPath = path.join(cwd, ".clinerules", "skillex-skills.md");
+  assert.equal(result.syncMode, "copy");
+  assert.equal(await isSymlink(targetPath), false);
 
-  const content = await fs.readFile(path.join(cwd, ".cursor", "rules", "skillex-skills.mdc"), "utf8");
-  assert.match(content, /^---$/m);
-  assert.match(content, /alwaysApply: true/);
-  assert.match(content, /## Skillex Managed Skills/);
+  const state = assertState(await getInstalledSkills({ cwd }));
+  assert.equal(state.syncMode, "copy");
 });
 
-test("syncInstalledSkills escreve arquivo de regras para windsurf", async (t: TestContext) => {
-  const cwd = await fs.mkdtemp(path.join(os.tmpdir(), "skillex-sync-windsurf-"));
-  t.after(async () => {
-    await fs.rm(cwd, { recursive: true, force: true });
-  });
-
-  await setupInstalledSkill(cwd, { adapter: "codex" });
-  const result = await syncInstalledSkills({
-    cwd,
-    adapter: "windsurf",
-    now: () => "2026-04-06T00:20:00.000Z",
-  });
-
-  assert.equal(result.sync.adapter, "windsurf");
-  assert.equal(result.sync.targetPath, ".windsurf/rules/skillex-skills.md");
-
-  const content = await fs.readFile(path.join(cwd, ".windsurf", "rules", "skillex-skills.md"), "utf8");
-  assert.match(content, /^---$/m);
-  assert.match(content, /trigger: always_on/);
-  assert.match(content, /## Skillex Managed Skills/);
-});
-
-test("syncInstalledSkills dry-run gera diff sem escrever arquivo nem lockfile", async (t: TestContext) => {
+test("syncInstalledSkills dry-run de symlink mostra alvo gerado sem escrever arquivos", async (t: TestContext) => {
   const cwd = await fs.mkdtemp(path.join(os.tmpdir(), "skillex-sync-dry-run-"));
   t.after(async () => {
     await fs.rm(cwd, { recursive: true, force: true });
   });
 
   await setupInstalledSkill(cwd, { adapter: "codex" });
-
   const result = await syncInstalledSkills({
     cwd,
+    adapter: "cline",
     dryRun: true,
     now: () => "2026-04-06T00:20:00.000Z",
   });
 
   assert.equal(result.dryRun, true);
-  assert.equal(result.changed, true);
-  assert.equal(result.sync.targetPath, "AGENTS.md");
-  assert.match(result.diff, /^--- atual\/AGENTS\.md$/m);
-  assert.match(result.diff, /^\+\+\+ novo\/AGENTS\.md$/m);
-  assert.equal(await pathExists(path.join(cwd, "AGENTS.md")), false);
+  assert.equal(result.syncMode, "symlink");
+  assert.match(result.diff, /symlink ->/);
+  assert.equal(await pathExists(path.join(cwd, ".clinerules", "skillex-skills.md")), false);
+});
 
+test("syncAdapterFiles faz fallback para copy quando symlink falha", async (t: TestContext) => {
+  const cwd = await fs.mkdtemp(path.join(os.tmpdir(), "skillex-sync-fallback-"));
+  t.after(async () => {
+    await fs.rm(cwd, { recursive: true, force: true });
+  });
+
+  await setupInstalledSkill(cwd, { adapter: "codex" });
   const state = assertState(await getInstalledSkills({ cwd }));
-  assert.equal(state.sync, null);
+  const statePaths = getStatePaths(cwd);
+  const skills = await loadInstalledSkillDocuments({ cwd, lockfile: state });
+
+  const warnings: string[] = [];
+  const result = await syncAdapterFiles({
+    cwd,
+    adapterId: "cline",
+    statePaths,
+    skills,
+    linkFactory: async (targetPath, linkPath) => ({
+      ok: false,
+      fallback: true,
+      relativeTarget: path.relative(path.dirname(linkPath), targetPath),
+    }),
+    warn: (message) => {
+      warnings.push(message);
+    },
+  });
+
+  assert.equal(result.syncMode, "copy");
+  assert.equal(warnings.length, 1);
+  assert.equal(await isSymlink(path.join(cwd, ".clinerules", "skillex-skills.md")), false);
 });
 
 test("auto-sync roda apos install, update e remove quando habilitado", async (t: TestContext) => {
@@ -348,12 +300,13 @@ test("auto-sync roda apos install, update e remove quando habilitado", async (t:
   const installResult = await installSkills(["git-master"], {
     cwd,
     catalogLoader: async () => createCatalog(),
-    downloader: fakeDownloader,
+    downloader: createDownloader(),
     now: () => "2026-04-06T00:10:00.000Z",
   });
 
   assert.ok(installResult.autoSync);
   assert.equal(installResult.autoSync.sync.adapter, "codex");
+  assert.equal(installResult.autoSync.syncMode, "copy");
   let content = await fs.readFile(path.join(cwd, "AGENTS.md"), "utf8");
   assert.match(content, /git-master@1\.0\.0/);
 
@@ -363,7 +316,7 @@ test("auto-sync roda apos install, update e remove quando habilitado", async (t:
       ...createCatalog(),
       skills: [{ ...createCatalog().skills[0]!, version: "2.0.0" }],
     }),
-    downloader: fakeDownloader,
+    downloader: createDownloader(),
     now: () => "2026-04-06T00:20:00.000Z",
   });
 
@@ -381,9 +334,4 @@ test("auto-sync roda apos install, update e remove quando habilitado", async (t:
   assert.equal(removeResult.autoSync.sync.adapter, "codex");
   content = await fs.readFile(path.join(cwd, "AGENTS.md"), "utf8");
   assert.match(content, /Nenhuma skill instalada no momento\./);
-
-  const state = assertState(await getInstalledSkills({ cwd }));
-  assert.equal(state.settings.autoSync, true);
-  assert.ok(state.sync);
-  assert.equal(state.sync.adapter, "codex");
 });

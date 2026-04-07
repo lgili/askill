@@ -29,6 +29,24 @@ export async function fetchText(url: string, init: RequestInit = {}): Promise<st
 }
 
 /**
+ * Fetches a UTF-8 text resource and returns `null` when the resource does not exist.
+ *
+ * @param url - Target URL.
+ * @param init - Fetch init overrides.
+ * @returns Response text body or `null` for HTTP 404.
+ */
+export async function fetchOptionalText(url: string, init: RequestInit = {}): Promise<string | null> {
+  const response = await fetch(url, withDefaultHeaders(init));
+  if (response.status === 404) {
+    return null;
+  }
+  if (!response.ok) {
+    throw new Error(`Falha ao baixar arquivo ${url} (${response.status})`);
+  }
+  return response.text();
+}
+
+/**
  * Fetches a JSON document and returns `null` when the resource does not exist.
  *
  * @param url - Target URL.

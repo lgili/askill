@@ -48,6 +48,7 @@ export async function createSkillScaffold(options) {
         compatibility,
         entry,
         files,
+        scripts: {},
       },
       null,
       2,
@@ -168,6 +169,8 @@ function buildSkillMarkdown(skillId, name, description) {
     "---",
     `name: "${escapeYaml(skillId)}"`,
     `description: "${escapeYaml(description)}"`,
+    "# autoInject: true",
+    '# activationPrompt: "Describe quando esta skill deve ser ativada automaticamente."',
     "---",
     "",
     `# ${name}`,
@@ -184,6 +187,7 @@ function buildSkillMarkdown(skillId, name, description) {
     "",
     "- Add `scripts/` files only for deterministic or repeated steps.",
     "- Add `references/` only when the skill needs extra domain guidance.",
+    "- If the skill needs auto-inject, uncomment `autoInject` and fill `activationPrompt` in the frontmatter.",
     "",
   ].join("\n");
 }

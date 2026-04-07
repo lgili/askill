@@ -8,6 +8,11 @@
 export type SyncMode = "managed-block" | "managed-file";
 
 /**
+ * Workspace sync write modes.
+ */
+export type SyncWriteMode = "symlink" | "copy";
+
+/**
  * Marker used to detect an adapter in a workspace.
  */
 export interface AdapterMarker {
@@ -84,6 +89,7 @@ export interface SkillManifest {
   entry: string;
   path: string;
   files: string[];
+  scripts?: Record<string, string> | undefined;
 }
 
 /**
@@ -125,6 +131,7 @@ export interface InstalledSkillMetadata {
   installedAt: string;
   compatibility: string[];
   tags: string[];
+  source?: string | undefined;
 }
 
 /**
@@ -172,6 +179,7 @@ export interface LockfileState {
   adapters: LockfileAdapters;
   settings: LockfileSettings;
   sync: SyncMetadata | null;
+  syncMode: SyncWriteMode | null;
   installed: Record<string, InstalledSkillMetadata>;
 }
 
@@ -181,6 +189,8 @@ export interface LockfileState {
 export interface StatePaths {
   stateDir: string;
   lockfilePath: string;
+  skillsDirPath: string;
+  generatedDirPath: string;
 }
 
 /**
@@ -192,6 +202,10 @@ export interface ProjectOptions extends CatalogSourceInput {
   adapter?: string | undefined;
   autoSync?: boolean | undefined;
   dryRun?: boolean | undefined;
+  mode?: SyncWriteMode | undefined;
+  trust?: boolean | undefined;
+  yes?: boolean | undefined;
+  timeout?: number | undefined;
   now?: NowFn | undefined;
 }
 
@@ -212,6 +226,10 @@ export interface InstalledSkillDocument {
   name: string;
   version: string;
   body: string;
+  skillDir: string;
+  scripts: Record<string, string>;
+  autoInject: boolean;
+  activationPrompt: string | null;
 }
 
 /**
@@ -226,6 +244,8 @@ export interface PreparedSyncResult {
   currentContent: string;
   nextContent: string;
   diff: string;
+  syncMode: SyncWriteMode;
+  generatedSourcePath?: string | undefined;
 }
 
 /**
@@ -246,6 +266,7 @@ export interface SyncResult {
   targetPath: string;
   changed: boolean;
   diff: string;
+  syncMode: SyncWriteMode;
 }
 
 /**
@@ -254,8 +275,12 @@ export interface SyncResult {
 export interface SyncOptions {
   cwd: string;
   adapterId: string;
+  statePaths: StatePaths;
   skills: InstalledSkillDocument[];
+  mode?: SyncWriteMode | undefined;
   dryRun?: boolean | undefined;
+  linkFactory?: ((targetPath: string, linkPath: string) => Promise<CreateSymlinkResult>) | undefined;
+  warn?: ((message: string) => void) | undefined;
 }
 
 /**
@@ -271,6 +296,7 @@ export interface SyncCommandResult {
   changed: boolean;
   diff: string;
   dryRun: boolean;
+  syncMode: SyncWriteMode;
 }
 
 /**
@@ -333,6 +359,24 @@ export interface ParsedArgs {
   command?: string | undefined;
   positionals: string[];
   flags: Record<string, string | boolean>;
+}
+
+/**
+ * Parsed direct GitHub install reference.
+ */
+export interface DirectGitHubRef {
+  owner: string;
+  repo: string;
+  ref: string;
+}
+
+/**
+ * Result of a filesystem link attempt.
+ */
+export interface CreateSymlinkResult {
+  ok: boolean;
+  fallback: boolean;
+  relativeTarget: string;
 }
 
 /**

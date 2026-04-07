@@ -120,11 +120,15 @@ node skills/create-skills/scripts/init_repo_skill.js \
 - `skillex list`: lê um catálogo remoto no GitHub e lista as skills disponíveis
 - `skillex search`: filtra skills remotas por texto, compatibilidade e tag
 - `skillex install <id>`: baixa uma ou mais skills
+- `skillex install <owner/repo[@ref]>`: instala uma skill direto de um repositório GitHub
 - `skillex install --all`: baixa todas as skills do catálogo
 - `skillex update [id]`: atualiza uma skill instalada ou todas
 - `skillex remove <id>`: remove uma ou mais skills instaladas
 - `skillex sync`: materializa as skills instaladas no arquivo de instruções do adapter ativo
 - `skillex sync --dry-run`: mostra o diff antes de escrever
+- `skillex sync --mode copy`: desativa symlink para adapters de arquivo dedicado
+- `skillex run <skill-id:comando>`: executa scripts declarados no `skill.json` local da skill
+- `skillex ui`: abre o seletor interativo no terminal
 - `skillex status`: mostra o estado local
 
 ## Adapters detectados
@@ -152,6 +156,7 @@ Quando há markers ambíguos, o CLI prioriza markers específicos do agente sobr
 - `windsurf`: gera `.windsurf/rules/skillex-skills.md`
 
 Os arquivos compartilhados preservam conteúdo manual fora do bloco gerenciado pelo `skillex`.
+Para adapters de arquivo dedicado (`cline`, `cursor`, `windsurf`), o padrão agora é gerar o arquivo central em `.agent-skills/generated/` e criar um symlink relativo para o alvo do adapter. Use `skillex sync --mode copy` para forçar cópia direta.
 
 Você também pode forçar um adapter:
 
@@ -184,9 +189,27 @@ catalog.json
   "tags": ["git", "workflow", "vscode"],
   "compatibility": ["codex", "copilot", "cline", "cursor", "claude", "gemini", "windsurf"],
   "entry": "SKILL.md",
-  "files": ["SKILL.md", "tools/git-cleanup.js"]
+  "files": ["SKILL.md", "tools/git-cleanup.js"],
+  "scripts": {
+    "cleanup": "node tools/git-cleanup.js"
+  }
 }
 ```
+
+## Frontmatter opcional de `SKILL.md`
+
+O `SKILL.md` pode declarar campos extras para injeção automática de contexto:
+
+```yaml
+---
+name: "git-master"
+description: "Fluxo Git"
+autoInject: true
+activationPrompt: "Sempre aplique as regras da skill Git Master quando o usuario pedir ajuda com Git."
+---
+```
+
+Se `autoInject: true` e `activationPrompt` estiverem presentes, o `skillex sync` injeta esse prompt em um bloco gerenciado separado no arquivo principal do adapter.
 
 ## Formato recomendado de `catalog.json`
 
@@ -224,6 +247,7 @@ npm run start -- search git --repo seu-user/seu-repo
 npm run start -- search pdf --repo seu-user/seu-repo --compatibility codex
 npm run start -- search review --repo seu-user/seu-repo --compatibility claude-code
 npm run start -- install git-master --repo seu-user/seu-repo
+npm run start -- install lgili/skillex-create-skill@main --trust
 npm run start -- install --all --repo seu-user/seu-repo
 npm run start -- update
 npm run start -- update git-master
@@ -231,6 +255,9 @@ npm run start -- remove git-master
 npm run start -- sync
 npm run start -- sync --dry-run
 npm run start -- sync --adapter cursor
+npm run start -- sync --adapter cline --mode copy
+npm run start -- run git-master:cleanup --yes
+npm run start -- ui --repo seu-user/seu-repo
 npm run start -- status
 ```
 
@@ -241,10 +268,14 @@ Depois do `init`, o CLI passa a reutilizar o catálogo salvo no lockfile. Então
 ```text
 .agent-skills/
   skills.json
-  git-master/
-    SKILL.md
-    skill.json
-    tools/
+  skills/
+    git-master/
+      SKILL.md
+      skill.json
+      tools/
+  generated/
+    cline/
+      skillex-skills.md
 ```
 
 O `skills.json` funciona como lockfile e guarda:
@@ -253,7 +284,9 @@ O `skills.json` funciona como lockfile e guarda:
 - adapter ativo e adapters detectados;
 - configuração local como `autoSync`;
 - último sync executado;
+- modo do último sync (`symlink` ou `copy`);
 - skills instaladas e suas versões;
+- origem da instalação, incluindo `github:owner/repo@ref` em installs diretos;
 - timestamps de criação e atualização.
 
 ## Auto-sync

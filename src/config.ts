@@ -3,6 +3,8 @@ import type { StatePaths } from "./types.js";
 
 export const DEFAULT_AGENT_SKILLS_DIR = ".agent-skills";
 export const DEFAULT_LOCKFILE = "skills.json";
+export const DEFAULT_LOCAL_SKILLS_DIR = "skills";
+export const DEFAULT_GENERATED_DIR = "generated";
 export const DEFAULT_CATALOG_PATH = "catalog.json";
 export const DEFAULT_SKILLS_DIR = "skills";
 export const DEFAULT_REPO = "owner/repo";
@@ -20,5 +22,7 @@ export function getStatePaths(cwd: string, baseDir = DEFAULT_AGENT_SKILLS_DIR): 
   return {
     stateDir,
     lockfilePath: path.join(stateDir, DEFAULT_LOCKFILE),
+    skillsDirPath: path.join(stateDir, DEFAULT_LOCAL_SKILLS_DIR),
+    generatedDirPath: path.join(stateDir, DEFAULT_GENERATED_DIR),
   };
 }

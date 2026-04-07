@@ -81,6 +81,9 @@
     "copilot",
     "cursor"
   ],
+  "dependencies": {
+    "@inquirer/prompts": "^7.9.0"
+  },
   "devDependencies": {
     "@types/node": "^24.6.0",
     "typescript": "^5.9.3"

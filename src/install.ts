@@ -1,15 +1,18 @@
 import * as path from "node:path";
 import { DEFAULT_AGENT_SKILLS_DIR, getStatePaths } from "./config.js";
+import { confirmAction } from "./confirm.js";
 import { ensureDir, pathExists, readJson, removePath, writeJson, writeText } from "./fs.js";
-import { fetchText } from "./http.js";
+import { fetchOptionalJson, fetchOptionalText, fetchText } from "./http.js";
 import { buildRawGitHubUrl, loadCatalog, resolveSource } from "./catalog.js";
 import { resolveAdapterState } from "./adapters.js";
 import { loadInstalledSkillDocuments, syncAdapterFiles } from "./sync.js";
+import { parseSkillFrontmatter } from "./skill.js";
 import type {
   CatalogData,
   CatalogLoader,
   CatalogSource,
   CatalogSourceInput,
+  DirectGitHubRef,
   InitProjectResult,
   InstallSkillsResult,
   LockfileState,
@@ -18,16 +21,18 @@ import type {
   RemoveSkillsResult,
   SkillDownloader,
   SkillManifest,
-  StatePaths,
   SyncCommandResult,
+  SyncWriteMode,
   UpdateInstalledSkillsResult,
 } from "./types.js";
-import { InstallError } from "./types.js";
+import { CliError, InstallError } from "./types.js";
 
 interface InstallOptions extends ProjectOptions {
   catalogLoader?: CatalogLoader;
   downloader?: SkillDownloader;
   installAll?: boolean;
+  confirm?: (() => Promise<boolean>) | undefined;
+  warn?: ((message: string) => void) | undefined;
 }
 
 interface DownloadedSkillManifest extends SkillManifest {
@@ -36,6 +41,13 @@ interface DownloadedSkillManifest extends SkillManifest {
     ref: string;
     path: string;
   };
+}
+
+interface DirectInstallPayload {
+  manifest: SkillManifest;
+  repo: string;
+  ref: string;
+  source: string;
 }
 
 /**
@@ -52,6 +64,8 @@ export async function initProject(options: ProjectOptions = {}): Promise<InitPro
     const now = getNow(options);
 
     await ensureDir(statePaths.stateDir);
+    await ensureDir(statePaths.skillsDirPath);
+    await ensureDir(statePaths.generatedDirPath);
 
     const existing = await readJson<LockfileState>(statePaths.lockfilePath, null);
     const source = resolveSource(
@@ -87,9 +101,9 @@ export async function initProject(options: ProjectOptions = {}): Promise<InitPro
 }
 
 /**
- * Installs one or more skills into the local workspace state.
+ * Installs one or more catalog skills or direct GitHub skills into the local workspace state.
  *
- * @param requestedSkillIds - Requested skill ids.
+ * @param requestedSkillIds - Requested skill ids or `owner/repo[@ref]` direct references.
  * @param options - Installation options.
  * @returns Install summary.
  * @throws {InstallError} When installation fails.
@@ -106,6 +120,8 @@ export async function installSkills(
     const downloader = options.downloader || downloadSkill;
 
     await ensureDir(statePaths.stateDir);
+    await ensureDir(statePaths.skillsDirPath);
+    await ensureDir(statePaths.generatedDirPath);
 
     const source = await resolveProjectSource(options);
     const existing = await readJson<LockfileState>(statePaths.lockfilePath, null);
@@ -117,24 +133,54 @@ export async function installSkills(
       });
     }
 
-    const catalog = await catalogLoader(source);
-    const selectedSkills = selectSkills(catalog.skills, requestedSkillIds, options.installAll);
+    const directRefs = requestedSkillIds
+      .map((skillId) => ({ input: skillId, reference: parseDirectGitHubRef(skillId) }))
+      .filter((entry) => entry.reference !== null) as Array<{ input: string; reference: DirectGitHubRef }>;
+    const catalogIds = requestedSkillIds.filter((skillId) => parseDirectGitHubRef(skillId) === null);
+    const installedSkills: SkillManifest[] = [];
 
-    for (const skill of selectedSkills) {
-      await downloader(skill, catalog, statePaths.stateDir);
-      lockfile.installed[skill.id] = buildInstalledMetadata(skill, {
-        cwd,
-        stateDir: statePaths.stateDir,
-        installedAt: now(),
-      });
+    if (options.installAll && directRefs.length > 0) {
+      throw new InstallError("Nao misture --all com referencias diretas do GitHub.", "INSTALL_ALL_WITH_DIRECT_REF");
     }
 
-    lockfile.catalog = {
-      repo: catalog.repo,
-      ref: catalog.ref,
-    };
-    lockfile.updatedAt = now();
+    if (options.installAll || catalogIds.length > 0) {
+      const catalog = await catalogLoader(source);
+      const selectedSkills = selectSkills(catalog.skills, catalogIds, options.installAll);
+      for (const skill of selectedSkills) {
+        await downloader(skill, catalog, statePaths.skillsDirPath);
+        lockfile.installed[skill.id] = buildInstalledMetadata(skill, {
+          cwd,
+          statePaths,
+          installedAt: now(),
+          source: `catalog:${catalog.repo}@${catalog.ref}`,
+        });
+        installedSkills.push(skill);
+      }
+      lockfile.catalog = {
+        repo: catalog.repo,
+        ref: catalog.ref,
+      };
+    } else if (!directRefs.length) {
+      throw new InstallError("Informe ao menos um skill-id, use --all ou passe owner/repo[@ref].", "INSTALL_REQUIRES_SKILL");
+    }
 
+    for (const directRef of directRefs) {
+      if (!options.trust) {
+        await confirmDirectInstall(directRef.input, options);
+      }
+
+      const directSkill = await fetchDirectGitHubSkill(directRef.reference);
+      await downloadDirectGitHubSkill(directSkill, statePaths.skillsDirPath);
+      lockfile.installed[directSkill.manifest.id] = buildInstalledMetadata(directSkill.manifest, {
+        cwd,
+        statePaths,
+        installedAt: now(),
+        source: directSkill.source,
+      });
+      installedSkills.push(directSkill.manifest);
+    }
+
+    lockfile.updatedAt = now();
     await writeJson(statePaths.lockfilePath, lockfile);
     const autoSync = await maybeAutoSync(
       withAgentSkillsDir(
@@ -143,15 +189,16 @@ export async function installSkills(
           adapter: lockfile.adapters.active,
           enabled: lockfile.settings.autoSync,
           now,
-          changed: selectedSkills.length > 0,
+          changed: installedSkills.length > 0,
+          mode: options.mode,
         },
         options.agentSkillsDir,
       ),
     );
 
     return {
-      installedCount: selectedSkills.length,
-      installedSkills: selectedSkills,
+      installedCount: installedSkills.length,
+      installedSkills,
       statePaths,
       autoSync,
     };
@@ -161,7 +208,7 @@ export async function installSkills(
 }
 
 /**
- * Updates installed skills from the configured remote catalog.
+ * Updates installed skills from the configured remote catalog or their direct GitHub sources.
  *
  * @param requestedSkillIds - Optional subset of installed skills to update.
  * @param options - Update options.
@@ -187,31 +234,57 @@ export async function updateInstalledSkills(
     const source = await resolveProjectSource(options);
     const lockfile = normalizeLockfile(existing, source, now);
     const skillIds = resolveInstalledSkillIds(lockfile, requestedSkillIds);
-    const catalog = await catalogLoader(source);
-    const catalogById = new Map<string, SkillManifest>(catalog.skills.map((skill) => [skill.id, skill]));
+    const directIds = skillIds.filter((skillId) => {
+      const metadata = lockfile.installed[skillId];
+      return Boolean(metadata?.source?.startsWith("github:"));
+    });
+    const catalogIds = skillIds.filter((skillId) => !directIds.includes(skillId));
     const updatedSkills: SkillManifest[] = [];
     const missingFromCatalog: string[] = [];
 
-    for (const skillId of skillIds) {
-      const skill = catalogById.get(skillId);
-      if (!skill) {
-        missingFromCatalog.push(skillId);
-        continue;
-      }
+    if (catalogIds.length > 0) {
+      const catalog = await catalogLoader(source);
+      const catalogById = new Map<string, SkillManifest>(catalog.skills.map((skill) => [skill.id, skill]));
+      for (const skillId of catalogIds) {
+        const skill = catalogById.get(skillId);
+        if (!skill) {
+          missingFromCatalog.push(skillId);
+          continue;
+        }
 
-      await downloader(skill, catalog, statePaths.stateDir);
-      lockfile.installed[skill.id] = buildInstalledMetadata(skill, {
-        cwd,
-        stateDir: statePaths.stateDir,
-        installedAt: now(),
-      });
-      updatedSkills.push(skill);
+        await downloader(skill, catalog, statePaths.skillsDirPath);
+        lockfile.installed[skill.id] = buildInstalledMetadata(skill, {
+          cwd,
+          statePaths,
+          installedAt: now(),
+          source: `catalog:${catalog.repo}@${catalog.ref}`,
+        });
+        updatedSkills.push(skill);
+      }
+      lockfile.catalog = {
+        repo: catalog.repo,
+        ref: catalog.ref,
+      };
     }
 
-    lockfile.catalog = {
-      repo: catalog.repo,
-      ref: catalog.ref,
-    };
+    for (const skillId of directIds) {
+      const metadata = lockfile.installed[skillId];
+      const directRef = metadata?.source ? parseGitHubSource(metadata.source) : null;
+      if (!directRef) {
+        throw new InstallError(`Fonte direta invalida para "${skillId}".`, "DIRECT_SOURCE_INVALID");
+      }
+
+      const directSkill = await fetchDirectGitHubSkill(directRef);
+      await downloadDirectGitHubSkill(directSkill, statePaths.skillsDirPath);
+      lockfile.installed[directSkill.manifest.id] = buildInstalledMetadata(directSkill.manifest, {
+        cwd,
+        statePaths,
+        installedAt: now(),
+        source: directSkill.source,
+      });
+      updatedSkills.push(directSkill.manifest);
+    }
+
     lockfile.updatedAt = now();
     await writeJson(statePaths.lockfilePath, lockfile);
     const autoSync = await maybeAutoSync(
@@ -222,6 +295,7 @@ export async function updateInstalledSkills(
           enabled: lockfile.settings.autoSync,
           now,
           changed: updatedSkills.length > 0,
+          mode: options.mode,
         },
         options.agentSkillsDir,
       ),
@@ -270,12 +344,13 @@ export async function removeSkills(
     const missingSkills: string[] = [];
 
     for (const skillId of requestedSkillIds) {
-      if (!lockfile.installed[skillId]) {
+      const metadata = lockfile.installed[skillId];
+      if (!metadata) {
         missingSkills.push(skillId);
         continue;
       }
 
-      await removePath(path.join(statePaths.stateDir, skillId));
+      await removePath(path.resolve(cwd, metadata.path));
       delete lockfile.installed[skillId];
       removedSkills.push(skillId);
     }
@@ -290,6 +365,7 @@ export async function removeSkills(
           enabled: lockfile.settings.autoSync,
           now,
           changed: removedSkills.length > 0,
+          mode: options.mode,
         },
         options.agentSkillsDir,
       ),
@@ -335,10 +411,17 @@ export async function syncInstalledSkills(options: ProjectOptions = {}): Promise
     }
 
     const skills = await loadInstalledSkillDocuments({
-      stateDir: statePaths.stateDir,
+      cwd,
       lockfile,
     });
-    const syncResult = await syncAdapterFiles(withDryRun({ cwd, adapterId, skills }, options.dryRun));
+    const syncResult = await syncAdapterFiles({
+      cwd,
+      adapterId,
+      statePaths,
+      skills,
+      ...(options.mode ? { mode: options.mode } : {}),
+      ...(options.dryRun !== undefined ? { dryRun: options.dryRun } : {}),
+    });
 
     if (options.dryRun) {
       return {
@@ -351,6 +434,7 @@ export async function syncInstalledSkills(options: ProjectOptions = {}): Promise
         changed: syncResult.changed,
         diff: syncResult.diff,
         dryRun: true,
+        syncMode: syncResult.syncMode,
       };
     }
 
@@ -359,6 +443,7 @@ export async function syncInstalledSkills(options: ProjectOptions = {}): Promise
       targetPath: syncResult.targetPath,
       syncedAt: now(),
     };
+    lockfile.syncMode = syncResult.syncMode;
     lockfile.updatedAt = now();
     await writeJson(statePaths.lockfilePath, lockfile);
 
@@ -369,87 +454,11 @@ export async function syncInstalledSkills(options: ProjectOptions = {}): Promise
       changed: syncResult.changed,
       diff: syncResult.diff,
       dryRun: false,
+      syncMode: syncResult.syncMode,
     };
   } catch (error) {
     throw toInstallError(error, "Falha ao sincronizar skills");
   }
-}
-
-function createBaseLockfile(source: CatalogSource, now: NowFn): LockfileState {
-  return {
-    formatVersion: 1,
-    createdAt: now(),
-    updatedAt: now(),
-    catalog: {
-      repo: source.repo,
-      ref: source.ref,
-    },
-    adapters: {
-      active: null,
-      detected: [],
-    },
-    settings: {
-      autoSync: false,
-    },
-    sync: null,
-    installed: {},
-  };
-}
-
-function selectSkills(allSkills: SkillManifest[], requestedSkillIds: string[], installAll = false): SkillManifest[] {
-  if (installAll) {
-    return allSkills;
-  }
-
-  if (!requestedSkillIds.length) {
-    throw new InstallError("Informe ao menos um skill-id ou use --all.", "INSTALL_REQUIRES_SKILL");
-  }
-
-  const byId = new Map<string, SkillManifest>(allSkills.map((skill) => [skill.id, skill]));
-  const selected = requestedSkillIds.map((skillId) => {
-    const skill = byId.get(skillId);
-    if (!skill) {
-      throw new InstallError(`Skill "${skillId}" nao encontrada no catalogo remoto.`, "SKILL_NOT_FOUND");
-    }
-    return skill;
-  });
-
-  return selected;
-}
-
-async function downloadSkill(skill: SkillManifest, catalog: CatalogData, stateDir: string): Promise<void> {
-  const skillTargetDir = path.join(stateDir, skill.id);
-  await removePath(skillTargetDir);
-  await ensureDir(skillTargetDir);
-
-  for (const relativePath of skill.files) {
-    const remotePath = path.posix.join(skill.path, relativePath);
-    const rawUrl = buildRawGitHubUrl(catalog.repo, catalog.ref, remotePath);
-    const content = await fetchText(rawUrl, { headers: { Accept: "text/plain" } });
-    const localPath = path.join(skillTargetDir, relativePath);
-    await writeText(localPath, content);
-  }
-
-  const manifestPath = path.join(skillTargetDir, "skill.json");
-  const manifest: DownloadedSkillManifest = {
-    id: skill.id,
-    name: skill.name,
-    version: skill.version,
-    description: skill.description,
-    author: skill.author,
-    tags: skill.tags,
-    compatibility: skill.compatibility,
-    entry: skill.entry,
-    path: skill.path,
-    files: skill.files,
-    source: {
-      repo: catalog.repo,
-      ref: catalog.ref,
-      path: skill.path,
-    },
-  };
-
-  await writeJson(manifestPath, manifest);
 }
 
 /**
@@ -491,6 +500,184 @@ export async function resolveProjectSource(options: ProjectOptions = {}): Promis
   );
 }
 
+/**
+ * Parses a direct GitHub install reference in `owner/repo[@ref]` format.
+ *
+ * @param input - User-supplied install argument.
+ * @returns Parsed direct GitHub reference or `null` when the value is not a direct ref.
+ */
+export function parseDirectGitHubRef(input: string): DirectGitHubRef | null {
+  if (!input || input.startsWith("http://") || input.startsWith("https://")) {
+    return null;
+  }
+
+  const match = input.trim().match(/^([A-Za-z0-9_.-]+)\/([A-Za-z0-9_.-]+?)(?:@(.+))?$/);
+  if (!match) {
+    return null;
+  }
+
+  return {
+    owner: match[1]!,
+    repo: match[2]!,
+    ref: match[3] || "main",
+  };
+}
+
+function createBaseLockfile(source: CatalogSource, now: NowFn): LockfileState {
+  return {
+    formatVersion: 1,
+    createdAt: now(),
+    updatedAt: now(),
+    catalog: {
+      repo: source.repo,
+      ref: source.ref,
+    },
+    adapters: {
+      active: null,
+      detected: [],
+    },
+    settings: {
+      autoSync: false,
+    },
+    sync: null,
+    syncMode: null,
+    installed: {},
+  };
+}
+
+function selectSkills(allSkills: SkillManifest[], requestedSkillIds: string[], installAll = false): SkillManifest[] {
+  if (installAll) {
+    return allSkills;
+  }
+
+  if (!requestedSkillIds.length) {
+    return [];
+  }
+
+  const byId = new Map<string, SkillManifest>(allSkills.map((skill) => [skill.id, skill]));
+  const selected = requestedSkillIds.map((skillId) => {
+    const skill = byId.get(skillId);
+    if (!skill) {
+      throw new InstallError(`Skill "${skillId}" nao encontrada no catalogo remoto.`, "SKILL_NOT_FOUND");
+    }
+    return skill;
+  });
+
+  return selected;
+}
+
+async function downloadSkill(skill: SkillManifest, catalog: CatalogData, skillsDirPath: string): Promise<void> {
+  const skillTargetDir = path.join(skillsDirPath, skill.id);
+  await removePath(skillTargetDir);
+  await ensureDir(skillTargetDir);
+
+  for (const relativePath of skill.files) {
+    const remotePath = skill.path ? path.posix.join(skill.path, relativePath) : relativePath;
+    const rawUrl = buildRawGitHubUrl(catalog.repo, catalog.ref, remotePath);
+    const content = await fetchText(rawUrl, { headers: { Accept: "text/plain" } });
+    const localPath = path.join(skillTargetDir, relativePath);
+    await writeText(localPath, content);
+  }
+
+  await writeDownloadedManifest(skillTargetDir, {
+    ...skill,
+    source: {
+      repo: catalog.repo,
+      ref: catalog.ref,
+      path: skill.path,
+    },
+  });
+}
+
+async function downloadDirectGitHubSkill(skill: DirectInstallPayload, skillsDirPath: string): Promise<void> {
+  const skillTargetDir = path.join(skillsDirPath, skill.manifest.id);
+  await removePath(skillTargetDir);
+  await ensureDir(skillTargetDir);
+
+  for (const relativePath of skill.manifest.files) {
+    const remotePath = skill.manifest.path ? path.posix.join(skill.manifest.path, relativePath) : relativePath;
+    const rawUrl = buildRawGitHubUrl(skill.repo, skill.ref, remotePath);
+    const content = await fetchText(rawUrl, { headers: { Accept: "text/plain" } });
+    await writeText(path.join(skillTargetDir, relativePath), content);
+  }
+
+  await writeDownloadedManifest(skillTargetDir, {
+    ...skill.manifest,
+    source: {
+      repo: skill.repo,
+      ref: skill.ref,
+      path: skill.manifest.path,
+    },
+  });
+}
+
+async function writeDownloadedManifest(skillTargetDir: string, manifest: DownloadedSkillManifest): Promise<void> {
+  await writeJson(path.join(skillTargetDir, "skill.json"), manifest);
+}
+
+async function fetchDirectGitHubSkill(reference: DirectGitHubRef): Promise<DirectInstallPayload> {
+  const repoId = `${reference.owner}/${reference.repo}`;
+  const manifestUrl = buildRawGitHubUrl(repoId, reference.ref, "skill.json");
+  const manifest =
+    await fetchOptionalJson<Partial<SkillManifest> & { scripts?: Record<string, string> }>(manifestUrl, {
+      headers: { Accept: "application/json" },
+    });
+
+  if (manifest) {
+    return {
+      repo: repoId,
+      ref: reference.ref,
+      source: `github:${repoId}@${reference.ref}`,
+      manifest: normalizeDirectManifest(manifest, reference),
+    };
+  }
+
+  const skillMarkdown = await fetchOptionalText(buildRawGitHubUrl(repoId, reference.ref, "SKILL.md"), {
+    headers: { Accept: "text/plain" },
+  });
+  if (!skillMarkdown) {
+    throw new InstallError(`Nenhum skill.json ou SKILL.md encontrado em ${repoId}@${reference.ref}.`, "DIRECT_SKILL_NOT_FOUND");
+  }
+
+  const frontmatter = parseSkillFrontmatter(skillMarkdown);
+  return {
+    repo: repoId,
+    ref: reference.ref,
+    source: `github:${repoId}@${reference.ref}`,
+    manifest: {
+      id: normalizeRepoSkillId(reference.repo),
+      name: frontmatter.name || toTitleCase(reference.repo),
+      version: "0.1.0",
+      description: frontmatter.description || `Skill instalada diretamente de ${repoId}.`,
+      author: reference.owner,
+      tags: [],
+      compatibility: [],
+      entry: "SKILL.md",
+      path: "",
+      files: ["SKILL.md"],
+    },
+  };
+}
+
+function normalizeDirectManifest(
+  manifest: Partial<SkillManifest> & { scripts?: Record<string, string> },
+  reference: DirectGitHubRef,
+): SkillManifest {
+  return {
+    id: manifest.id || normalizeRepoSkillId(reference.repo),
+    name: manifest.name || toTitleCase(reference.repo),
+    version: manifest.version || "0.1.0",
+    description: manifest.description || `Skill instalada diretamente de ${reference.owner}/${reference.repo}.`,
+    author: manifest.author || reference.owner,
+    tags: Array.isArray(manifest.tags) ? manifest.tags : [],
+    compatibility: Array.isArray(manifest.compatibility) ? manifest.compatibility : [],
+    entry: manifest.entry || "SKILL.md",
+    path: manifest.path || "",
+    files: Array.isArray(manifest.files) && manifest.files.length > 0 ? manifest.files : [manifest.entry || "SKILL.md"],
+    ...(manifest.scripts ? { scripts: manifest.scripts } : {}),
+  };
+}
+
 function normalizeLockfile(existing: LockfileState | null, source: CatalogSource, now: NowFn): LockfileState {
   if (!existing) {
     return createBaseLockfile(source, now);
@@ -522,21 +709,23 @@ function normalizeLockfile(existing: LockfileState | null, source: CatalogSource
       autoSync: Boolean(existing.settings?.autoSync),
     },
     sync: existing.sync || null,
+    syncMode: existing.syncMode || null,
     installed: existing.installed || {},
   };
 }
 
 function buildInstalledMetadata(
   skill: SkillManifest,
-  context: { cwd: string; stateDir: string; installedAt: string },
+  context: { cwd: string; statePaths: ReturnType<typeof getStatePaths>; installedAt: string; source: string },
 ): LockfileState["installed"][string] {
   return {
     name: skill.name,
     version: skill.version,
-    path: toPosix(path.relative(context.cwd, path.join(context.stateDir, skill.id))),
+    path: toPosix(path.relative(context.cwd, path.join(context.statePaths.skillsDirPath, skill.id))),
     installedAt: context.installedAt,
     compatibility: skill.compatibility,
     tags: skill.tags,
+    source: context.source,
   };
 }
 
@@ -575,6 +764,7 @@ async function maybeAutoSync(options: {
   enabled: boolean;
   now: NowFn;
   changed: boolean;
+  mode?: SyncWriteMode | undefined;
 }): Promise<SyncCommandResult | null> {
   if (!options.enabled || !options.changed) {
     return null;
@@ -584,6 +774,7 @@ async function maybeAutoSync(options: {
     cwd: options.cwd,
     ...(options.agentSkillsDir ? { agentSkillsDir: options.agentSkillsDir } : {}),
     ...(options.adapter ? { adapter: options.adapter } : {}),
+    ...(options.mode ? { mode: options.mode } : {}),
     now: options.now,
   });
 }
@@ -629,19 +820,51 @@ function withAgentSkillsDir<T extends { agentSkillsDir?: string | undefined }>(
   } as T;
 }
 
-function withDryRun<T extends { dryRun?: boolean | undefined }>(
-  options: Omit<T, "dryRun">,
-  dryRun: boolean | undefined,
-): T {
-  return {
-    ...options,
-    ...(dryRun !== undefined ? { dryRun } : {}),
-  } as T;
+async function confirmDirectInstall(skillRef: string, options: InstallOptions): Promise<void> {
+  const warning = `Aviso: ${skillRef} sera instalado diretamente do GitHub e nao foi verificado pelo catalogo ativo.`;
+  (options.warn || console.error)(warning);
+
+  const confirm = options.confirm || (() => confirmAction("Continuar com a instalacao direta?"));
+  const accepted = await confirm();
+  if (!accepted) {
+    throw new InstallError("Instalacao direta cancelada pelo usuario.", "INSTALL_CANCELLED");
+  }
+}
+
+function parseGitHubSource(source: string): DirectGitHubRef | null {
+  if (!source.startsWith("github:")) {
+    return null;
+  }
+
+  const withoutPrefix = source.slice("github:".length);
+  const separatorIndex = withoutPrefix.lastIndexOf("@");
+  if (separatorIndex <= 0) {
+    return null;
+  }
+
+  return parseDirectGitHubRef(
+    `${withoutPrefix.slice(0, separatorIndex)}@${withoutPrefix.slice(separatorIndex + 1)}`,
+  );
+}
+
+function normalizeRepoSkillId(repo: string): string {
+  return repo.trim().toLowerCase();
+}
+
+function toTitleCase(skillId: string): string {
+  return skillId
+    .split("-")
+    .filter(Boolean)
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(" ");
 }
 
 function toInstallError(error: unknown, fallbackMessage: string): InstallError {
   if (error instanceof InstallError) {
     return error;
+  }
+  if (error instanceof CliError) {
+    return new InstallError(error.message, error.code);
   }
 
   const message = error instanceof Error ? error.message : String(error);

@@ -1,5 +1,6 @@
 import * as fs from "node:fs/promises";
 import * as path from "node:path";
+import type { CreateSymlinkResult } from "./types.js";
 import { ValidationError } from "./types.js";
 
 /**
@@ -92,6 +93,82 @@ export async function writeText(filePath: string, value: string): Promise<void> 
  */
 export async function removePath(targetPath: string): Promise<void> {
   await fs.rm(targetPath, { recursive: true, force: true });
+}
+
+/**
+ * Creates a relative symlink and reports whether the caller should fall back to copy mode.
+ *
+ * @param targetPath - Absolute path the link should point to.
+ * @param linkPath - Absolute path of the symlink to create.
+ * @returns Symlink creation result.
+ */
+export async function createSymlink(targetPath: string, linkPath: string): Promise<CreateSymlinkResult> {
+  const relativeTarget = path.relative(path.dirname(linkPath), targetPath) || ".";
+  await ensureDir(path.dirname(linkPath));
+  await removePath(linkPath);
+
+  try {
+    await fs.symlink(relativeTarget, linkPath);
+    return {
+      ok: true,
+      fallback: false,
+      relativeTarget,
+    };
+  } catch (error) {
+    if (
+      error &&
+      typeof error === "object" &&
+      "code" in error &&
+      (error.code === "EPERM" || error.code === "ENOTSUP")
+    ) {
+      return {
+        ok: false,
+        fallback: true,
+        relativeTarget,
+      };
+    }
+    throw error;
+  }
+}
+
+/**
+ * Removes a symlink without following it.
+ *
+ * @param linkPath - Link path to remove when present.
+ */
+export async function removeSymlink(linkPath: string): Promise<void> {
+  try {
+    const stats = await fs.lstat(linkPath);
+    if (stats.isSymbolicLink()) {
+      await fs.unlink(linkPath);
+    }
+  } catch (error) {
+    if (error && typeof error === "object" && "code" in error && error.code === "ENOENT") {
+      return;
+    }
+    throw error;
+  }
+}
+
+/**
+ * Reads a symlink target when the path is a symbolic link.
+ *
+ * @param linkPath - Candidate link path.
+ * @returns Link target or `null` when the path is missing or not a symlink.
+ */
+export async function readSymlink(linkPath: string): Promise<string | null> {
+  try {
+    const stats = await fs.lstat(linkPath);
+    if (!stats.isSymbolicLink()) {
+      return null;
+    }
+    return await fs.readlink(linkPath);
+  } catch (error) {
+    if (error && typeof error === "object" && "code" in error && error.code === "ENOENT") {
+      return null;
+    }
+    throw error;
+  }
 }
 
 /**
