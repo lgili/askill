@@ -1,23 +1,4 @@
-# repo-skills-catalog Specification
-
-## Purpose
-TBD - created by archiving change add-first-party-skills-catalog. Update Purpose after archive.
-## Requirements
-### Requirement: Publish First-Party Skills In This Repository
-
-The repository SHALL expose first-party skills in a catalog structure consumable by the `skillex` CLI.
-
-#### Scenario: Catalog file lists first-party skills
-
-- **WHEN** a user or CLI reads the repository root
-- **THEN** a `catalog.json` file exists
-- **AND** it lists the first-party skills published by the repository
-
-#### Scenario: First-party skill files exist in skills directory
-
-- **WHEN** a maintainer inspects a listed skill
-- **THEN** the skill exists under `skills/<skill-id>/`
-- **AND** contains the files declared in `catalog.json`
+## MODIFIED Requirements
 
 ### Requirement: Provide A Skill For Authoring New Skills
 
@@ -29,25 +10,7 @@ The repository SHALL include a first-party skill dedicated to creating new repos
 - **THEN** it creates the expected folder structure and metadata files
 - **AND** registers the new skill in the root `catalog.json` automatically
 
-### Requirement: Document Repository Skill Authoring
-
-The repository SHALL document how first-party skills are added and maintained.
-
-#### Scenario: README documents first-party skills
-
-- **WHEN** a maintainer reads the README
-- **THEN** the README explains where skills live
-- **AND** how the first-party catalog is updated
-
-### Requirement: Scaffold New Skills With Current Adapter Defaults
-
-The repository skill scaffold SHALL default new skills to the current set of supported adapter identifiers unless the maintainer overrides compatibility explicitly.
-
-#### Scenario: Create skill without compatibility override
-
-- **WHEN** a maintainer runs the `create-skills` scaffold without `--compatibility`
-- **THEN** the generated `skill.json` includes the current supported adapter ids
-- **AND** the same compatibility list is written to `catalog.json`
+## ADDED Requirements
 
 ### Requirement: Bootstrap A New Skill Catalog Repository
 
@@ -88,4 +51,3 @@ The repository skill-authoring workflow SHALL include helper scripts when they m
 - **WHEN** the implementation needs a deterministic repeated step such as repository bootstrap or catalog validation
 - **THEN** the workflow may provide a callable script for that step
 - **AND** any shipped script is included in the skill metadata and catalog file lists when required for installation
-

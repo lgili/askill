@@ -6,15 +6,17 @@
     {
       "id": "create-skills",
       "name": "Create Skills",
-      "version": "0.1.0",
-      "description": "Scaffold new first-party skills for this repository with the expected SKILL.md, skill.json, agents/openai.yaml, and catalog entry.",
+      "version": "0.2.0",
+      "description": "Bootstrap skill-catalog repositories and scaffold new skills with automatic root catalog registration.",
       "path": "skills/create-skills",
       "entry": "SKILL.md",
       "files": [
         "SKILL.md",
         "agents/openai.yaml",
         "references/repo-format.md",
-        "scripts/init_repo_skill.js"
+        "scripts/init_repo_skill.js",
+        "scripts/bootstrap_skill_repo.js",
+        "scripts/check_catalog.js"
       ],
       "compatibility": [
         "codex",

@@ -566,10 +566,33 @@ skillex list --verbose
 
 ## Publishing Your Own Catalog
 
-1. Create a public GitHub repository.
-2. Add skills following the [Skill Format](#skill-format) above.
-3. Optionally add a `catalog.json` at the root.
-4. Point users at your catalog:
+1. Create a local repository folder for your catalog.
+2. Use the bundled `create-skills` automation to bootstrap the repository structure:
+
+```bash
+node skills/create-skills/scripts/bootstrap_skill_repo.js \
+  --root /path/to/your-skills \
+  --repo your-org/your-skills
+```
+
+3. Create additional skills in that repository as needed:
+
+```bash
+node /path/to/your-skills/skills/create-skills/scripts/init_repo_skill.js \
+  --root /path/to/your-skills \
+  --skill-id review-helper \
+  --name "Review Helper" \
+  --description "Help review pull requests consistently."
+```
+
+4. Validate the root catalog before publishing:
+
+```bash
+node /path/to/your-skills/skills/create-skills/scripts/check_catalog.js \
+  --root /path/to/your-skills
+```
+
+5. Publish the repository to GitHub and point users at your catalog:
 
 ```bash
 npx skillex@latest init --repo your-org/your-skills

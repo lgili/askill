@@ -1,7 +1,7 @@
 interface:
   display_name: "Create Skills"
-  short_description: "Scaffold first-party repo skills"
-  default_prompt: "Use $create-skills to scaffold a new first-party skill in this repository."
+  short_description: "Bootstrap skill repos and scaffold skills"
+  default_prompt: "Use $create-skills to bootstrap a skill repository or scaffold a new skill while keeping the root catalog updated."
 
 policy:
   allow_implicit_invocation: true
