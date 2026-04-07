@@ -172,7 +172,7 @@ test("validateSkillRepoCatalog detecta arquivos faltando listados no catalogo", 
 });
 
 test("catalogo first-party referencia arquivos reais", async () => {
-  const root = "/Users/lgili/Documents/01 - Codes/01 - Github/Skill";
+  const root = process.cwd();
   const catalog = JSON.parse(await fs.readFile(path.join(root, "catalog.json"), "utf8"));
 
   assert.ok(Array.isArray(catalog.skills));
