@@ -51,7 +51,7 @@ function createCatalog() {
         description: "Fluxo Git",
         author: "example",
         tags: ["git"],
-        compatibility: ["codex", "copilot", "cline", "cursor"],
+        compatibility: ["codex", "copilot", "cline", "cursor", "claude", "gemini", "windsurf"],
         entry: "SKILL.md",
         path: "skills/git-master",
         files: ["SKILL.md"],
@@ -154,6 +154,68 @@ test("syncInstalledSkills preserva conteudo manual em copilot-instructions", asy
   assert.match(content, /<!-- ASKILL:START -->/);
 });
 
+test("syncInstalledSkills preserva conteudo manual em CLAUDE.md", async (t) => {
+  const cwd = await fs.mkdtemp(path.join(os.tmpdir(), "askill-sync-claude-"));
+  t.after(async () => {
+    await fs.rm(cwd, { recursive: true, force: true });
+  });
+
+  await writeText(
+    path.join(cwd, "CLAUDE.md"),
+    [
+      "# Manual Claude",
+      "",
+      "Contexto do projeto.",
+      "",
+    ].join("\n"),
+  );
+
+  await setupInstalledSkill(cwd);
+  const result = await syncInstalledSkills({
+    cwd,
+    now: () => "2026-04-06T00:20:00.000Z",
+  });
+
+  assert.equal(result.sync.adapter, "claude");
+  assert.equal(result.sync.targetPath, "CLAUDE.md");
+
+  const content = await fs.readFile(path.join(cwd, "CLAUDE.md"), "utf8");
+  assert.match(content, /# Manual Claude/);
+  assert.match(content, /## Askill Managed Skills/);
+  assert.match(content, /<!-- ASKILL:START -->/);
+});
+
+test("syncInstalledSkills preserva conteudo manual em GEMINI.md", async (t) => {
+  const cwd = await fs.mkdtemp(path.join(os.tmpdir(), "askill-sync-gemini-"));
+  t.after(async () => {
+    await fs.rm(cwd, { recursive: true, force: true });
+  });
+
+  await writeText(
+    path.join(cwd, "GEMINI.md"),
+    [
+      "# Manual Gemini",
+      "",
+      "Padroes do repositorio.",
+      "",
+    ].join("\n"),
+  );
+
+  await setupInstalledSkill(cwd);
+  const result = await syncInstalledSkills({
+    cwd,
+    now: () => "2026-04-06T00:20:00.000Z",
+  });
+
+  assert.equal(result.sync.adapter, "gemini");
+  assert.equal(result.sync.targetPath, "GEMINI.md");
+
+  const content = await fs.readFile(path.join(cwd, "GEMINI.md"), "utf8");
+  assert.match(content, /# Manual Gemini/);
+  assert.match(content, /## Askill Managed Skills/);
+  assert.match(content, /<!-- ASKILL:START -->/);
+});
+
 test("syncInstalledSkills escreve arquivo dedicado para cline", async (t) => {
   const cwd = await fs.mkdtemp(path.join(os.tmpdir(), "askill-sync-cline-"));
   t.after(async () => {
@@ -199,6 +261,28 @@ test("syncInstalledSkills escreve arquivo MDC para cursor", async (t) => {
   const content = await fs.readFile(path.join(cwd, ".cursor", "rules", "askill-skills.mdc"), "utf8");
   assert.match(content, /^---$/m);
   assert.match(content, /alwaysApply: true/);
+  assert.match(content, /## Askill Managed Skills/);
+});
+
+test("syncInstalledSkills escreve arquivo de regras para windsurf", async (t) => {
+  const cwd = await fs.mkdtemp(path.join(os.tmpdir(), "askill-sync-windsurf-"));
+  t.after(async () => {
+    await fs.rm(cwd, { recursive: true, force: true });
+  });
+
+  await setupInstalledSkill(cwd, { adapter: "codex" });
+  const result = await syncInstalledSkills({
+    cwd,
+    adapter: "windsurf",
+    now: () => "2026-04-06T00:20:00.000Z",
+  });
+
+  assert.equal(result.sync.adapter, "windsurf");
+  assert.equal(result.sync.targetPath, ".windsurf/rules/askill-skills.md");
+
+  const content = await fs.readFile(path.join(cwd, ".windsurf", "rules", "askill-skills.md"), "utf8");
+  assert.match(content, /^---$/m);
+  assert.match(content, /trigger: always_on/);
   assert.match(content, /## Askill Managed Skills/);
 });
 

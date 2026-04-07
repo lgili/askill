@@ -19,8 +19,11 @@
       "compatibility": [
         "codex",
         "copilot",
+        "cline",
         "cursor",
-        "cline"
+        "claude",
+        "gemini",
+        "windsurf"
       ],
       "tags": [
         "skills",

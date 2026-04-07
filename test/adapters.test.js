@@ -19,7 +19,20 @@ test("detectAdapters encontra adapters por marcadores do workspace", async (t) =
   await fs.writeFile(path.join(cwd, ".github", "copilot-instructions.md"), "rules\n", "utf8");
 
   const detected = await detectAdapters(cwd);
-  assert.deepEqual(detected, ["codex", "copilot", "cursor"]);
+  assert.deepEqual(detected, ["cursor", "copilot", "codex"]);
+});
+
+test("detectAdapters prioriza markers especificos sobre arquivos compartilhados", async (t) => {
+  const cwd = await fs.mkdtemp(path.join(os.tmpdir(), "askill-adapters-priority-"));
+  t.after(async () => {
+    await fs.rm(cwd, { recursive: true, force: true });
+  });
+
+  await fs.writeFile(path.join(cwd, "AGENTS.md"), "# workspace\n", "utf8");
+  await fs.mkdir(path.join(cwd, ".windsurf", "rules"), { recursive: true });
+
+  const detected = await detectAdapters(cwd);
+  assert.deepEqual(detected, ["windsurf", "codex"]);
 });
 
 test("resolveAdapterState respeita override explicito", async (t) => {
@@ -29,9 +42,9 @@ test("resolveAdapterState respeita override explicito", async (t) => {
   });
 
   await fs.writeFile(path.join(cwd, "AGENTS.md"), "# workspace\n", "utf8");
-  const adapterState = await resolveAdapterState({ cwd, adapter: "cursor" });
+  const adapterState = await resolveAdapterState({ cwd, adapter: "claude-code" });
 
-  assert.equal(adapterState.active, "cursor");
+  assert.equal(adapterState.active, "claude");
   assert.deepEqual(adapterState.detected, ["codex"]);
 });
 

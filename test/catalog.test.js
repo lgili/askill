@@ -70,3 +70,36 @@ test("searchCatalogSkills filtra por texto e compatibilidade", () => {
   assert.equal(results.length, 1);
   assert.equal(results[0].id, "git-master");
 });
+
+test("searchCatalogSkills normaliza aliases de compatibilidade", () => {
+  const skills = [
+    {
+      id: "reviewer",
+      name: "Reviewer",
+      version: "1.0.0",
+      description: "Review de codigo",
+      tags: ["review"],
+      compatibility: ["claude"],
+    },
+    {
+      id: "issue-helper",
+      name: "Issue Helper",
+      version: "1.0.0",
+      description: "Ajuda com issues",
+      tags: ["issues"],
+      compatibility: ["gemini-cli"],
+    },
+  ];
+
+  const claudeResults = searchCatalogSkills(skills, {
+    compatibility: "claude-code",
+  });
+  assert.equal(claudeResults.length, 1);
+  assert.equal(claudeResults[0].id, "reviewer");
+
+  const geminiResults = searchCatalogSkills(skills, {
+    compatibility: "gemini",
+  });
+  assert.equal(geminiResults.length, 1);
+  assert.equal(geminiResults[0].id, "issue-helper");
+});

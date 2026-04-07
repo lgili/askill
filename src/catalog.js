@@ -4,6 +4,7 @@ import {
   DEFAULT_REPO,
   DEFAULT_SKILLS_DIR,
 } from "./config.js";
+import { normalizeAdapterList } from "./adapters.js";
 import { assertSafeRelativePath } from "./fs.js";
 import { fetchJson, fetchOptionalJson } from "./http.js";
 
@@ -227,7 +228,7 @@ function normalizeSkill(skill, source) {
     description: skill.description || "",
     author: skill.author || null,
     tags: Array.isArray(skill.tags) ? skill.tags : [],
-    compatibility: Array.isArray(skill.compatibility) ? skill.compatibility : [],
+    compatibility: normalizeAdapterList(skill.compatibility),
     entry: skill.entry || "SKILL.md",
     path: stripLeadingSlash(skillPath),
     files: uniqueFiles,
@@ -236,13 +237,13 @@ function normalizeSkill(skill, source) {
 
 export function searchCatalogSkills(skills, options = {}) {
   const query = String(options.query || "").trim().toLowerCase();
-  const compatibility = normalizeFilterList(options.compatibility);
+  const compatibility = normalizeAdapterList(options.compatibility);
   const tags = normalizeFilterList(options.tags);
 
   return sortSkills(
     skills.filter((skill) => {
       if (compatibility.length > 0) {
-        const supported = new Set((skill.compatibility || []).map((item) => item.toLowerCase()));
+        const supported = new Set(normalizeAdapterList(skill.compatibility));
         if (!compatibility.every((item) => supported.has(item))) {
           return false;
         }

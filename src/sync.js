@@ -103,10 +103,22 @@ function buildAdapterFileContent(adapterId, body) {
         body.trim(),
         "",
       ].join("\n");
+    case "windsurf":
+      return [
+        "---",
+        'description: "Askill managed skills"',
+        "trigger: always_on",
+        "---",
+        "",
+        body.trim(),
+        "",
+      ].join("\n");
     case "cline":
       return body;
     case "codex":
     case "copilot":
+    case "claude":
+    case "gemini":
       return [MANAGED_START, body.trim(), MANAGED_END, ""].join("\n");
     default:
       throw new Error(`Adapter desconhecido: ${adapterId}`);

@@ -41,6 +41,16 @@ test("createSkillScaffold cria a skill e registra no catalogo", async (t) => {
   );
   assert.equal(skillManifest.id, "demo-skill");
   assert.equal(skillManifest.name, "Demo Skill");
+  assert.deepEqual(skillManifest.compatibility, [
+    "codex",
+    "copilot",
+    "cline",
+    "cursor",
+    "claude",
+    "gemini",
+    "windsurf",
+  ]);
+  assert.deepEqual(catalog.skills[0].compatibility, skillManifest.compatibility);
 });
 
 test("catalogo first-party referencia arquivos reais", async () => {

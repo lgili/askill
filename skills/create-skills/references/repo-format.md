@@ -24,6 +24,7 @@ Use these conventions when adding a first-party skill to this repository.
 
 - `skill.json.id` must match the folder name.
 - `skill.json.entry` should point to `SKILL.md`.
+- `skill.json.compatibility` should use canonical adapter ids such as `codex`, `copilot`, `cline`, `cursor`, `claude`, `gemini`, and `windsurf`.
 - `SKILL.md` frontmatter should contain only `name` and `description`.
 - `agents/openai.yaml.interface.default_prompt` must mention the skill as `$skill-id`.
 

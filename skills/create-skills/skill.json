@@ -12,8 +12,11 @@
   "compatibility": [
     "codex",
     "copilot",
+    "cline",
     "cursor",
-    "cline"
+    "claude",
+    "gemini",
+    "windsurf"
   ],
   "entry": "SKILL.md",
   "files": [

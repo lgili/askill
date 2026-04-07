@@ -4,13 +4,15 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
+const DEFAULT_COMPATIBILITY = ["codex", "copilot", "cline", "cursor", "claude", "gemini", "windsurf"];
+
 export async function createSkillScaffold(options) {
   const rootDir = path.resolve(options.root || process.cwd());
   const skillId = normalizeSkillId(options.skillId);
   const name = (options.name || toTitleCase(skillId)).trim();
   const description = normalizeDescription(options.description);
   const author = (options.author || "lgili").trim();
-  const compatibility = parseList(options.compatibility, ["codex", "copilot", "cursor", "cline"]);
+  const compatibility = parseList(options.compatibility, DEFAULT_COMPATIBILITY);
   const tags = parseList(options.tags, []);
 
   const catalogPath = path.join(rootDir, "catalog.json");

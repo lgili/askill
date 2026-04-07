@@ -135,6 +135,11 @@ O CLI já detecta e persiste um adapter ativo com base no workspace:
 - `copilot`: `.github/copilot-instructions.md`
 - `cline`: `.cline/`, `.roo/`, `.clinerules`
 - `cursor`: `.cursor/`, `.cursorrules`
+- `claude`: `CLAUDE.md`, `.claude/`
+- `gemini`: `GEMINI.md`, `.gemini/`
+- `windsurf`: `.windsurf/`, `.windsurf/rules/`
+
+Quando há markers ambíguos, o CLI prioriza markers específicos do agente sobre arquivos compartilhados.
 
 ## Alvos de sync por adapter
 
@@ -142,6 +147,9 @@ O CLI já detecta e persiste um adapter ativo com base no workspace:
 - `copilot`: atualiza um bloco gerenciado em `.github/copilot-instructions.md`
 - `cline`: gera `.clinerules/askill-skills.md`
 - `cursor`: gera `.cursor/rules/askill-skills.mdc`
+- `claude`: atualiza um bloco gerenciado em `CLAUDE.md`
+- `gemini`: atualiza um bloco gerenciado em `GEMINI.md`
+- `windsurf`: gera `.windsurf/rules/askill-skills.md`
 
 Os arquivos compartilhados preservam conteúdo manual fora do bloco gerenciado pelo `askill`.
 
@@ -174,7 +182,7 @@ catalog.json
   "description": "Ensina o agente a fazer commits semanticos e gerenciar branches.",
   "author": "SeuNome",
   "tags": ["git", "workflow", "vscode"],
-  "compatibility": ["codex", "copilot", "cursor", "cline"],
+  "compatibility": ["codex", "copilot", "cline", "cursor", "claude", "gemini", "windsurf"],
   "entry": "SKILL.md",
   "files": ["SKILL.md", "tools/git-cleanup.js"]
 }
@@ -196,7 +204,7 @@ catalog.json
       "path": "skills/git-master",
       "entry": "SKILL.md",
       "files": ["SKILL.md", "tools/git-cleanup.js"],
-      "compatibility": ["codex", "copilot", "cursor", "cline"],
+      "compatibility": ["codex", "copilot", "cline", "cursor", "claude", "gemini", "windsurf"],
       "tags": ["git", "workflow"]
     }
   ]
@@ -204,6 +212,7 @@ catalog.json
 ```
 
 O CLI tenta usar `catalog.json` primeiro. Se ele não existir, faz fallback e escaneia `skills/*/skill.json` no GitHub.
+Nos filtros de busca, aliases como `claude-code`, `gemini-cli`, `github-copilot` e `roo-code` sao normalizados automaticamente.
 
 ## Uso local
 
@@ -213,6 +222,7 @@ npm run start -- init --repo seu-user/seu-repo
 npm run start -- list --repo seu-user/seu-repo
 npm run start -- search git --repo seu-user/seu-repo
 npm run start -- search pdf --repo seu-user/seu-repo --compatibility codex
+npm run start -- search review --repo seu-user/seu-repo --compatibility claude-code
 npm run start -- install git-master --repo seu-user/seu-repo
 npm run start -- install --all --repo seu-user/seu-repo
 npm run start -- update
