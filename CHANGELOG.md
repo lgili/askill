@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.4] - 2026-04-08
+
+### Changed
+- `skillex ui` skill list now shows compact labels: `Name (id) · tag1, tag2, tag3` — description and full compatibility list removed from each row
+- `skillex ui` shows "Fetching catalog..." while loading and limits visible rows to 12 at a time
+- `skillex install` and `skillex update` now render an inline progress bar (`[████░░░░] 1/5 skill-id`) instead of printing one line per skill
+
 ## [0.2.3] - 2026-04-08
 
 ### Fixed
