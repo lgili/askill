@@ -1,0 +1,351 @@
+% engreportgreen.sty - Generic green technical engineering report style
+\NeedsTeXFormat{LaTeX2e}
+\ProvidesPackage{engreportgreen}[2026/04/08 Generic Green Engineering Report Style]
+
+\RequirePackage[utf8]{inputenc}
+\RequirePackage[T1]{fontenc}
+\RequirePackage{geometry}
+\RequirePackage{graphicx}
+\RequirePackage{xcolor}
+\RequirePackage{fancyhdr}
+\RequirePackage{titlesec}
+\RequirePackage{hyperref}
+\RequirePackage{lastpage}
+\RequirePackage{booktabs}
+\RequirePackage{amsmath}
+\RequirePackage{float}
+\RequirePackage{caption}
+\RequirePackage{siunitx}
+\RequirePackage[scaled=0.94]{helvet}
+\RequirePackage{microtype}
+\RequirePackage{parskip}
+\RequirePackage{tikz}
+\RequirePackage{listings}
+\RequirePackage{array}
+\RequirePackage{etoolbox}
+\RequirePackage{colortbl}
+
+\usetikzlibrary{calc}
+\renewcommand\familydefault{\sfdefault}
+
+\geometry{left=20mm,right=20mm,top=30mm,bottom=25mm,headheight=50pt}
+
+\definecolor{brandgreen}{RGB}{0, 166, 81}
+\definecolor{branddarkgreen}{RGB}{0, 130, 65}
+\definecolor{brandlightgreen}{RGB}{230, 247, 237}
+\definecolor{textdark}{RGB}{60, 60, 60}
+\definecolor{textmedium}{RGB}{120, 120, 120}
+\definecolor{panelgray}{RGB}{245, 245, 245}
+\definecolor{warningyellow}{RGB}{255, 193, 7}
+\definecolor{warningbg}{RGB}{255, 249, 230}
+\definecolor{infoblue}{RGB}{33, 150, 243}
+\definecolor{infobg}{RGB}{227, 242, 253}
+\definecolor{dangerred}{RGB}{220, 53, 69}
+\definecolor{dangerbg}{RGB}{253, 236, 238}
+
+\newcommand{\brandname}{Your Brand}
+\newcommand{\brandlogopath}{img/brand-logo.png}
+\newcommand{\projecttitle}{Project Title}
+\newcommand{\docnumber}{DOC-0001}
+\newcommand{\projnumber}{PRJ-0001}
+\newcommand{\docstatus}{Draft}
+\newcommand{\docauthor}{Engineering Team}
+\newcommand{\docreviewer}{Reviewer Name}
+\newcommand{\docrevision}{A}
+\newcommand{\reporttitleprimary}{Engineering}
+\newcommand{\reporttitlesecondary}{Report}
+\newcommand{\confidentialitynote}{This document contains proprietary project information. Unauthorized reproduction or distribution is prohibited.}
+
+\newcommand{\setbrandname}[1]{\renewcommand{\brandname}{#1}}
+\newcommand{\setbrandlogopath}[1]{\renewcommand{\brandlogopath}{#1}}
+\newcommand{\setprojecttitle}[1]{\renewcommand{\projecttitle}{#1}}
+\newcommand{\setdocnumber}[1]{\renewcommand{\docnumber}{#1}}
+\newcommand{\setprojnumber}[1]{\renewcommand{\projnumber}{#1}}
+\newcommand{\setdocstatus}[1]{\renewcommand{\docstatus}{#1}}
+\newcommand{\setdocauthor}[1]{\renewcommand{\docauthor}{#1}}
+\newcommand{\setdocreviewer}[1]{\renewcommand{\docreviewer}{#1}}
+\newcommand{\setdocrevision}[1]{\renewcommand{\docrevision}{#1}}
+\newcommand{\setreporttitleprimary}[1]{\renewcommand{\reporttitleprimary}{#1}}
+\newcommand{\setreporttitlesecondary}[1]{\renewcommand{\reporttitlesecondary}{#1}}
+\newcommand{\setconfidentialitynote}[1]{\renewcommand{\confidentialitynote}{#1}}
+
+\hypersetup{
+    colorlinks=true,
+    linkcolor=branddarkgreen,
+    urlcolor=brandgreen,
+    citecolor=textdark,
+    pdftitle={\projecttitle},
+    pdfauthor={\docauthor}
+}
+
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{%
+    \begin{minipage}[b]{0.65\textwidth}
+        \textcolor{textdark}{\textbf{\projecttitle}}\\[2pt]
+        \textcolor{textmedium}{\small Doc: \docnumber{} \textbar{} Project: \projnumber{} \textbar{} Rev: \docrevision}
+    \end{minipage}%
+}
+\fancyhead[R]{%
+    \IfFileExists{\brandlogopath}{%
+        \includegraphics[height=1.2cm]{\brandlogopath}%
+    }{%
+        \Large\textbf{\textcolor{brandgreen}{\brandname}}%
+    }%
+}
+\fancyfoot[L]{\textcolor{textmedium}{\footnotesize Confidential -- Internal Use Only}}
+\fancyfoot[C]{\textcolor{textmedium}{\footnotesize \docstatus}}
+\fancyfoot[R]{\textcolor{textdark}{\footnotesize Page \textbf{\thepage} of \textbf{\pageref{LastPage}}}}
+
+\renewcommand{\headrulewidth}{2pt}
+\renewcommand{\headrule}{\hbox to\headwidth{\color{brandgreen}\leaders\hrule height \headrulewidth\hfill}}
+\renewcommand{\footrulewidth}{0.5pt}
+\renewcommand{\footrule}{\hbox to\headwidth{\color{brandgreen}\leaders\hrule height \footrulewidth\hfill}}
+
+\titleformat{\section}
+    {\color{brandgreen}\Large\bfseries\uppercase}
+    {\thesection}{1em}{}[\titlerule]
+\titlespacing*{\section}{0pt}{20pt}{12pt}
+
+\titleformat{\subsection}
+    {\color{textdark}\large\bfseries}
+    {\thesubsection}{1em}{}
+\titlespacing*{\subsection}{0pt}{16pt}{8pt}
+
+\titleformat{\subsubsection}
+    {\color{branddarkgreen}\normalsize\bfseries}
+    {\thesubsubsection}{1em}{}
+\titlespacing*{\subsubsection}{0pt}{12pt}{6pt}
+
+\captionsetup{
+    font={small,sf},
+    labelfont={bf,color=brandgreen},
+    labelsep=colon,
+    justification=centering,
+    margin=20pt
+}
+\captionsetup[table]{position=above,skip=8pt}
+\captionsetup[figure]{position=below,skip=8pt}
+
+\newcommand{\makeinfobox}[4]{%
+    \vspace{8pt}%
+    \noindent%
+    \begin{tikzpicture}
+        \node[
+            draw=none,
+            fill=#2,
+            inner sep=10pt,
+            text width=\dimexpr\textwidth-24pt\relax,
+            align=left
+        ] (box) {%
+            \textbf{\textcolor{#1}{#3}}\\[4pt]
+            #4
+        };
+        \draw[#1, line width=4pt] (box.north west) -- (box.south west);
+    \end{tikzpicture}%
+    \vspace{8pt}%
+}
+
+\newcommand{\notebox}[1]{\makeinfobox{infoblue}{infobg}{Note}{#1}}
+\newcommand{\warningbox}[1]{\makeinfobox{warningyellow}{warningbg}{Warning}{#1}}
+\newcommand{\dangerbox}[1]{\makeinfobox{dangerred}{dangerbg}{Important}{#1}}
+\newcommand{\specbox}[1]{\makeinfobox{brandgreen}{brandlightgreen}{Specifications}{#1}}
+\newcommand{\decisionbox}[1]{\makeinfobox{brandgreen}{brandlightgreen}{Decision}{#1}}
+\newcommand{\riskbox}[1]{\makeinfobox{dangerred}{dangerbg}{Risk}{#1}}
+
+\newcommand{\highlightbox}[1]{%
+    \vspace{8pt}%
+    \noindent%
+    \begin{tikzpicture}
+        \node[
+            draw=brandgreen,
+            line width=1pt,
+            fill=brandlightgreen,
+            inner sep=10pt,
+            text width=\dimexpr\textwidth-24pt\relax,
+            align=left,
+            rounded corners=3pt
+        ] {#1};
+    \end{tikzpicture}%
+    \vspace{8pt}%
+}
+
+\lstset{
+    basicstyle=\ttfamily\small,
+    backgroundcolor=\color{panelgray},
+    frame=single,
+    framerule=0pt,
+    rulecolor=\color{brandgreen},
+    numbers=left,
+    numberstyle=\tiny\color{textmedium},
+    numbersep=8pt,
+    breaklines=true,
+    breakatwhitespace=true,
+    tabsize=4,
+    showstringspaces=false,
+    keywordstyle=\color{branddarkgreen}\bfseries,
+    commentstyle=\color{textmedium}\itshape,
+    stringstyle=\color{dangerred},
+    xleftmargin=15pt,
+    xrightmargin=10pt,
+    aboveskip=10pt,
+    belowskip=10pt
+}
+
+\newcommand{\statuspass}{\textcolor{brandgreen}{\textbf{PASS}}}
+\newcommand{\statusfail}{\textcolor{dangerred}{\textbf{FAIL}}}
+\newcommand{\statuspending}{\textcolor{warningyellow}{\textbf{PENDING}}}
+\newcommand{\statushold}{\textcolor{textmedium}{\textbf{ON HOLD}}}
+
+\newcommand{\revisionentry}[4]{#1 & #2 & #3 & #4 \\}
+\newcommand{\approvalentry}[4]{#1 & #2 & #3 & #4 \\}
+\newcommand{\actionentry}[4]{#1 & #2 & #3 & #4 \\}
+
+\newcommand{\makerevisionhistory}[1]{%
+    \begin{table}[H]
+        \centering
+        \caption{Document Revision History}
+        \renewcommand{\arraystretch}{1.4}
+        \begin{tabular}{>{\centering\arraybackslash}p{1.5cm} >{\centering\arraybackslash}p{2.5cm} >{\centering\arraybackslash}p{3.0cm} p{6.5cm}}
+            \toprule
+            \rowcolor{brandlightgreen}
+            \textbf{Rev.} & \textbf{Date} & \textbf{Author} & \textbf{Description} \\
+            \midrule
+            #1
+            \bottomrule
+        \end{tabular}
+    \end{table}
+}
+
+\newcommand{\makeapprovaltable}[1]{%
+    \begin{table}[H]
+        \centering
+        \caption{Approval and Sign-off Matrix}
+        \renewcommand{\arraystretch}{1.35}
+        \begin{tabular}{p{3.1cm} p{3.5cm} p{3.2cm} p{3.1cm}}
+            \toprule
+            \rowcolor{brandlightgreen}
+            \textbf{Role} & \textbf{Name} & \textbf{Status} & \textbf{Date} \\
+            \midrule
+            #1
+            \bottomrule
+        \end{tabular}
+    \end{table}
+}
+
+\newcommand{\makeactiontable}[2]{%
+    \begin{table}[H]
+        \centering
+        \caption{#1}
+        \renewcommand{\arraystretch}{1.35}
+        \begin{tabular}{p{5.2cm} p{2.8cm} p{2.2cm} p{2.4cm}}
+            \toprule
+            \rowcolor{brandlightgreen}
+            \textbf{Action} & \textbf{Owner} & \textbf{Due} & \textbf{Status} \\
+            \midrule
+            #2
+            \bottomrule
+        \end{tabular}
+    \end{table}
+}
+
+\newcommand{\makecomponenttable}[2]{%
+    \begin{table}[H]
+        \centering
+        \caption{#1}
+        \renewcommand{\arraystretch}{1.3}
+        \begin{tabular}{>{\centering\arraybackslash}p{2.3cm} p{4.0cm} >{\centering\arraybackslash}p{3.2cm} p{3.8cm}}
+            \toprule
+            \rowcolor{brandlightgreen}
+            \textbf{Reference} & \textbf{Description} & \textbf{Part Number} & \textbf{Manufacturer} \\
+            \midrule
+            #2
+            \bottomrule
+        \end{tabular}
+    \end{table}
+}
+
+\newcommand{\makeengreporttitle}{
+    \hypersetup{pageanchor=false}
+    \begin{titlepage}
+        \begin{tikzpicture}[remember picture,overlay]
+            \fill[brandgreen] (current page.north west) rectangle ([xshift=12mm]current page.south west);
+            \fill[branddarkgreen] ([yshift=25mm]current page.south west) rectangle ([yshift=28mm]current page.south east);
+        \end{tikzpicture}
+
+        \begin{center}
+            \vspace*{0.5cm}
+
+            \IfFileExists{\brandlogopath}{
+                \includegraphics[width=7.5cm]{\brandlogopath}
+            }{
+                {\Huge\textbf{\textcolor{brandgreen}{\brandname}}}
+            }
+
+            \vspace{2cm}
+
+            {\fontsize{28}{34}\selectfont\bfseries\textcolor{textdark}{\reporttitleprimary}}\\[4pt]
+            {\fontsize{28}{34}\selectfont\bfseries\textcolor{brandgreen}{\reporttitlesecondary}}
+
+            \vspace{0.8cm}
+
+            {\LARGE\textcolor{textdark}{\projecttitle}}
+
+            \vspace{2.5cm}
+
+            \renewcommand{\arraystretch}{1.6}
+            \begin{tabular}{|>{\columncolor{brandlightgreen}}p{4.5cm}|p{7cm}|}
+                \hline
+                \textbf{Document Number} & \docnumber \\
+                \hline
+                \textbf{Project Number} & \projnumber \\
+                \hline
+                \textbf{Revision} & \docrevision \\
+                \hline
+                \textbf{Date} & \today \\
+                \hline
+                \textbf{Status} & \docstatus \\
+                \hline
+                \textbf{Author} & \docauthor \\
+                \hline
+                \textbf{Reviewer} & \docreviewer \\
+                \hline
+            \end{tabular}
+
+            \vfill
+
+            \fcolorbox{brandgreen}{panelgray}{%
+                \begin{minipage}{0.8\textwidth}
+                    \centering
+                    \vspace{8pt}
+                    \textbf{\textcolor{brandgreen}{CONFIDENTIALITY NOTICE}}\\[4pt]
+                    \small \confidentialitynote
+                    \vspace{8pt}
+                \end{minipage}
+            }
+
+            \vspace{0.8cm}
+        \end{center}
+    \end{titlepage}
+    \clearpage
+    \hypersetup{pageanchor=true}
+}
+
+\newcommand{\makelabreporttitle}{\makeengreporttitle}
+
+\newcommand{\makehistorypage}{
+    \newpage
+    \thispagestyle{fancy}
+    \section*{Document History}
+    \addcontentsline{toc}{section}{Document History}
+}
+
+\newcommand{\highlight}[1]{\textcolor{brandgreen}{\textbf{#1}}}
+\newcommand{\partref}[1]{\texttt{\textcolor{branddarkgreen}{#1}}}
+\newcommand{\val}[2]{\textbf{#1}\,\si{#2}}
+\newcommand{\greenrule}{\par\noindent\textcolor{brandgreen}{\rule{\textwidth}{1pt}}\par}
+
+\renewcommand{\labelitemi}{\textcolor{brandgreen}{\textbullet}}
+\renewcommand{\labelitemii}{\textcolor{branddarkgreen}{--}}
+
+\endinput

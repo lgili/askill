@@ -1,0 +1,41 @@
+\section{Test Setup and Requirements}
+
+\subsection{Evaluation Criteria}
+\begin{table}[H]
+    \centering
+    \small
+    \begin{tabular}{l c p{7.2cm}}
+        \toprule
+        \textbf{Requirement} & \textbf{Target} & \textbf{Rationale} \\
+        \midrule
+        Input Voltage Range & \SI{9}{\volt} to \SI{16}{\volt} & Representative operating envelope for the subsystem. \\
+        Output Accuracy & $\pm$5\% & Ensures acceptable regulation under nominal load. \\
+        Peak Temperature & $< \SI{90}{\celsius}$ & Maintains component margin and reliability. \\
+        Startup Behavior & No fault or latch-up & Prevents unsafe transients during bring-up. \\
+        \bottomrule
+    \end{tabular}
+    \caption{Representative evaluation targets}
+    \label{tab:requirements}
+\end{table}
+
+\subsection{Bench Configuration}
+\begin{itemize}
+    \item programmable power supply for input stimulus;
+    \item electronic load or representative passive load;
+    \item oscilloscope for transient capture;
+    \item multimeter or power analyzer for steady-state measurements;
+    \item thermal camera or thermocouple instrumentation when temperature matters.
+\end{itemize}
+
+\warningbox{
+Before copying measured data into the report, confirm units, channel names, and
+test conditions. Most review confusion comes from screenshots that are not tied
+to a clearly stated setup.
+}
+
+\subsection{Bill of Materials Snapshot}
+\makecomponenttable{Representative Critical Components}{
+    U1 & Main controller / regulator under evaluation & ABC1234 & Generic Semiconductor \\
+    Q1 & Switching device for the primary load path & QSW-45A & Generic Power Devices \\
+    D1 & Protection or flyback diode & DFLY-40V & Generic Rectifier Co. \\
+}

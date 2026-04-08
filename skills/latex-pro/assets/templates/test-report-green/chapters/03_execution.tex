@@ -1,0 +1,47 @@
+\section{Test Execution}
+
+\subsection{Procedure Summary}
+\begin{enumerate}
+    \item Confirm the setup against the approved bench configuration.
+    \item Record DUT revision, instrument IDs, and environmental conditions.
+    \item Execute each test case in the agreed sequence.
+    \item Save raw captures, processed plots, and anomalies before moving to the next case.
+    \item Stop the campaign when a safety or validity condition is violated.
+\end{enumerate}
+
+\warningbox{
+If an operator deviates from the published procedure, record the deviation
+immediately. Silent deviations invalidate otherwise clean-looking result tables.
+}
+
+\subsection{Execution Matrix}
+\begin{table}[H]
+    \centering
+    \small
+    \begin{tabular}{p{2.6cm} p{3.5cm} p{1.9cm} p{1.7cm} p{2.6cm}}
+        \toprule
+        \textbf{Test ID} & \textbf{Condition} & \textbf{Owner} & \textbf{Result} & \textbf{Notes} \\
+        \midrule
+        T-001 & Nominal functional bring-up at rated input & Eng. A & \statuspass & Stable startup and expected steady state. \\
+        T-002 & Cold-start at minimum input boundary & Eng. A & \statuspass & No latch-up observed. \\
+        T-003 & Load-step transient at nominal ambient & Eng. B & \statuspending & Waiting for final scope capture review. \\
+        T-004 & Protection behavior under abnormal load & Eng. B & \statushold & Deferred until safety review closes. \\
+        \bottomrule
+    \end{tabular}
+    \caption{Example execution tracking matrix}
+    \label{tab:execution-matrix}
+\end{table}
+
+\subsection{Evidence Handling}
+\begin{itemize}
+    \item Store raw waveform files and screenshots with consistent names.
+    \item Link each figure in the report to a trace ID, file path, or bench note.
+    \item Separate engineering commentary from direct observation.
+    \item Flag any measurement that required manual correction or probe scaling.
+\end{itemize}
+
+\begin{lstlisting}[caption={Example capture naming convention},label={lst:capture-name}]
+TR-017_T003_load-step_scope-ch2-output_2026-04-08.png
+TR-017_T003_load-step_scope-setup_2026-04-08.txt
+TR-017_T003_load-step_notes.md
+\end{lstlisting}

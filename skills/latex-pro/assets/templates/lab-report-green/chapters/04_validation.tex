@@ -1,0 +1,44 @@
+\section{Validation, Risks, and Next Actions}
+
+\subsection{Validation Summary}
+\begin{table}[H]
+    \centering
+    \small
+    \begin{tabular}{l c p{7cm}}
+        \toprule
+        \textbf{Check} & \textbf{Result} & \textbf{Observation} \\
+        \midrule
+        Functional bring-up & Pass & Output reached the expected operating state. \\
+        Thermal margin & Pass with note & Highest measured component stayed below the provisional thermal limit. \\
+        Protection behavior & Pending & Requires intentional fault injection on the bench. \\
+        Long-run stability & Pending & Requires extended soak or endurance testing. \\
+        \bottomrule
+    \end{tabular}
+    \caption{Representative validation matrix}
+    \label{tab:validation}
+\end{table}
+
+\subsection{Open Risks}
+\warningbox{
+Bench validation is not complete until the report lists unresolved risks
+explicitly. A polished PDF without an honest risk section is a review trap.
+}
+
+\begin{itemize}
+    \item Confirm performance at worst-case input, load, and ambient conditions.
+    \item Validate transient behavior during startup, shutdown, and load steps.
+    \item Cross-check thermal assumptions against measured component temperatures.
+\end{itemize}
+
+\subsection{Recommended Next Actions}
+\begin{enumerate}
+    \item Replace placeholders with measured plots, board photos, and annotated schematics.
+    \item Update component tables with approved part numbers and manufacturers.
+    \item Add revision-history entries as the report moves through review.
+    \item If required, replace the generic brand fallback with a local logo at \texttt{img/brand-logo.png}.
+\end{enumerate}
+
+\dangerbox{
+If the document will be shared externally, review the footer, confidentiality
+notice, and embedded metadata before release.
+}

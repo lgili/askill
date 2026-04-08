@@ -1,0 +1,30 @@
+\section{Risks, Review Gates, and Delivery Plan}
+
+\subsection{Main Risks}
+\begin{table}[H]
+    \centering
+    \small
+    \begin{tabular}{p{3.0cm} p{2.1cm} p{2.0cm} p{4.0cm}}
+        \toprule
+        \textbf{Risk} & \textbf{Likelihood} & \textbf{Impact} & \textbf{Mitigation} \\
+        \midrule
+        Thermal headroom lower than expected & Medium & High & Reserve footprint and validate worst-case thermal model early. \\
+        Control interaction with upstream platform & Medium & Medium & Add interface simulation and bench integration step. \\
+        Supply-chain constraint on key part & High & Medium & Qualify alternate part and dual-source footprint where possible. \\
+        \bottomrule
+    \end{tabular}
+    \caption{Representative design risk register}
+    \label{tab:design-risks}
+\end{table}
+
+\makeactiontable{Near-Term Engineering Actions}{
+    Replace placeholder blocks with the approved architecture figure. & Design Lead & 2026-04-14 & Open \\
+    Add measured or simulated budget table for the chosen concept. & Systems Eng. & 2026-04-12 & In Progress \\
+    Review supplier alternatives for the critical component set. & Procurement & 2026-04-19 & Open \\
+}
+
+\riskbox{
+If a design report is used to justify implementation, the unresolved risks must
+be visible on the last pages. Hidden uncertainty is one of the main causes of
+bad technical sign-off.
+}

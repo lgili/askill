@@ -1,0 +1,32 @@
+\section{Requirements and Traceability}
+
+\subsection{Requirement Mapping}
+\begin{table}[H]
+    \centering
+    \small
+    \begin{tabular}{p{2.3cm} p{3.8cm} p{2.6cm} p{2.2cm} p{1.6cm}}
+        \toprule
+        \textbf{Req. ID} & \textbf{Requirement} & \textbf{Validation Method} & \textbf{Evidence Ref.} & \textbf{Status} \\
+        \midrule
+        VR-001 & Output remains within regulation across the nominal operating envelope. & Bench sweep and spot measurements & Fig. 3, Tab. 2 & \statuspass \\
+        VR-002 & Protection logic prevents unsafe restart after fault. & Fault injection and log review & Pending & \statuspending \\
+        VR-003 & Surface temperature remains below the approved limit. & Thermal imaging and sensor cross-check & Tab. 3 & \statuspass \\
+        VR-004 & Startup behavior is repeatable across the specified supply range. & Repeated cold-start campaign & Fig. 2 & \statuspass \\
+        \bottomrule
+    \end{tabular}
+    \caption{Example requirement traceability matrix}
+    \label{tab:traceability}
+\end{table}
+
+\subsection{Assumptions and Dependencies}
+\begin{itemize}
+    \item note any design revision, firmware baseline, or BOM freeze assumed by the evidence;
+    \item state which supplier claims are accepted as inherited evidence;
+    \item identify environmental or fixture constraints that limit the claim;
+    \item distinguish between validated behavior and justified engineering expectation.
+\end{itemize}
+
+\warningbox{
+Do not mark a requirement as passed if the evidence only covers the nominal
+condition and the requirement is worst-case by definition.
+}

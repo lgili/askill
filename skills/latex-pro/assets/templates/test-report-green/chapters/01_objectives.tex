@@ -1,0 +1,45 @@
+\section{Objectives and Test Scope}
+
+\subsection{Purpose}
+This report records the executed verification campaign for the device or
+subsystem under test. It is intended to make the test purpose, boundaries,
+success criteria, and reporting logic obvious to reviewers before they interpret
+plots or tables.
+
+\highlightbox{
+Use this template when the main question is \emph{what was tested, how it was
+tested, and whether each acceptance criterion passed}. It is stronger than a
+generic lab report when you need explicit execution traceability.
+}
+
+\subsection{Device Under Test}
+\begin{table}[H]
+    \centering
+    \small
+    \begin{tabular}{l p{9.7cm}}
+        \toprule
+        \textbf{Field} & \textbf{Value / Guidance} \\
+        \midrule
+        Item Name & Name the board, assembly, firmware build, or subsystem revision. \\
+        Serial / Build & Record the serial number, build lot, or assembly identifier. \\
+        Test Objective & State the precise capability being verified. \\
+        Campaign Owner & Name the engineer or team responsible for execution. \\
+        Test Window & State the date range or lab session window for the activity. \\
+        \bottomrule
+    \end{tabular}
+    \caption{Recommended device-under-test metadata}
+    \label{tab:dut-metadata}
+\end{table}
+
+\subsection{Acceptance Criteria}
+\begin{itemize}
+    \item list measurable pass/fail criteria before pasting captured data;
+    \item tie each criterion to a requirement, risk, or previous design concern;
+    \item state any explicit exclusions to prevent scope creep during review;
+    \item identify which results are screening-only and which are release-gating.
+\end{itemize}
+
+\notebox{
+If different benches or fixtures were used during the campaign, declare that in
+this chapter. Mixed environments are acceptable as long as they are explicit.
+}

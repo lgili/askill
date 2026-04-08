@@ -1,0 +1,49 @@
+{
+  "id": "cpp-pro",
+  "name": "C++ Pro",
+  "version": "1.0.0",
+  "description": "Modern C++ engineering for architecture, ownership, concurrency, CMake, performance tuning, build quality, and safe modernization across libraries, CLIs, services, and systems code.",
+  "author": "lgili",
+  "tags": [
+    "cpp",
+    "cmake",
+    "raii",
+    "concepts",
+    "concurrency",
+    "performance",
+    "sanitizers",
+    "modernization"
+  ],
+  "compatibility": [
+    "codex",
+    "copilot",
+    "cline",
+    "cursor",
+    "claude",
+    "gemini",
+    "windsurf"
+  ],
+  "entry": "SKILL.md",
+  "files": [
+    "SKILL.md",
+    "agents/openai.yaml",
+    "references/architecture-and-interfaces.md",
+    "references/modern-cpp.md",
+    "references/templates.md",
+    "references/memory-performance.md",
+    "references/concurrency.md",
+    "references/build-tooling.md",
+    "references/legacy-modernization.md",
+    "references/advanced-patterns.md",
+    "scripts/bootstrap_cpp_project.py",
+    "scripts/run_cpp_quality_gates.py",
+    "scripts/scaffold_cpp_test_template.py",
+    "scripts/audit_cpp_project.py"
+  ],
+  "scripts": {
+    "bootstrap": "python scripts/bootstrap_cpp_project.py",
+    "quality": "python scripts/run_cpp_quality_gates.py",
+    "scaffold-test": "python scripts/scaffold_cpp_test_template.py",
+    "audit": "python scripts/audit_cpp_project.py"
+  }
+}

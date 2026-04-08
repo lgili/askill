@@ -1,0 +1,7 @@
+interface:
+  display_name: "LaTeX Pro"
+  short_description: "LaTeX authoring, templates, bibliography, build, and troubleshooting workflows"
+  default_prompt: "Apply LaTeX Pro to design, scaffold, debug, or polish this LaTeX document with a clean project structure, correct engine and bibliography choices, and publication-ready output."
+
+policy:
+  allow_implicit_invocation: true

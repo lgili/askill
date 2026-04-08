@@ -1,0 +1,4 @@
+interface:
+  display_name: "C++ Pro"
+  short_description: "Modern C++ architecture, ownership, tooling, tests, and performance workflows"
+  default_prompt: "Apply C++ Pro to design, refactor, review, or optimize this C++ solution with explicit ownership, modern CMake, strict quality gates, and evidence-based performance decisions."

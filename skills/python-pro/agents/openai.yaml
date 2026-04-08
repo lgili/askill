@@ -1,0 +1,4 @@
+interface:
+  display_name: "Python Pro"
+  short_description: "Senior Python engineering for architecture, typing, tests, migrations, and delivery quality"
+  default_prompt: "Apply Python Pro to design, refactor, or review this Python solution with explicit architecture, modern typing, reliable tests, reproducible tooling, and safe delivery decisions."

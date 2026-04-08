@@ -1,0 +1,38 @@
+\section{Design Context and Drivers}
+
+\subsection{Problem Statement}
+This report documents the engineering reasoning behind a proposed design. It is
+best used when reviewers need to understand requirements, interfaces,
+constraints, and why a specific architecture was selected over alternatives.
+
+\specbox{
+Design reports should explain \emph{why this approach exists} before they dive
+into schematics, algorithms, or dimensions. A clear problem statement reduces
+review churn more than an extra page of equations.
+}
+
+\subsection{Primary Drivers}
+\begin{table}[H]
+    \centering
+    \small
+    \begin{tabular}{l p{9.5cm}}
+        \toprule
+        \textbf{Driver} & \textbf{Interpretation} \\
+        \midrule
+        Functional Objective & What the design must do at the system level. \\
+        Performance Constraint & Accuracy, speed, efficiency, timing, or capacity requirements. \\
+        Physical Constraint & Size, weight, thermal, EMC, or environmental limits. \\
+        Cost / Supply Constraint & Approved part families, sourcing restrictions, or target cost. \\
+        Integration Constraint & Interfaces to firmware, mechanics, manufacturing, or test. \\
+        \bottomrule
+    \end{tabular}
+    \caption{Recommended design-driver summary}
+    \label{tab:design-drivers}
+\end{table}
+
+\subsection{Assumptions}
+\begin{itemize}
+    \item state any inherited platform, firmware, or supplier assumption;
+    \item call out which interfaces are fixed and which may still change;
+    \item note any placeholder component, model, or preliminary geometry.
+\end{itemize}

@@ -1,0 +1,39 @@
+\section{Validation Scope and Context}
+
+\subsection{Intent of the Campaign}
+This report is meant for validation activities where the key question is whether
+the design satisfies documented requirements, regulatory expectations, or
+internal release criteria. It should read as an argument supported by evidence,
+not just a loose collection of bench notes.
+
+\specbox{
+Validation reports are strongest when they connect requirements, evidence,
+exceptions, and sign-off in one place. Reviewers should not need a second file
+to understand whether the product is ready.
+}
+
+\subsection{Boundary Conditions}
+\begin{table}[H]
+    \centering
+    \small
+    \begin{tabular}{l p{9.5cm}}
+        \toprule
+        \textbf{Area} & \textbf{Validation Boundary} \\
+        \midrule
+        Functional Scope & Features, modes, or mission states covered by this campaign. \\
+        Exclusions & Known out-of-scope conditions, deferred scenarios, or pending design changes. \\
+        Inputs Considered & Supply range, sensor domain, communication states, or external commands. \\
+        Outputs Evaluated & Performance, compliance, protection behavior, user-visible reactions, or logs. \\
+        Evidence Sources & Bench data, simulation correlation, analysis, review records, or supplier documentation. \\
+        \bottomrule
+    \end{tabular}
+    \caption{Suggested validation boundary statement}
+    \label{tab:validation-boundary}
+\end{table}
+
+\subsection{Approval Expectations}
+\makeapprovaltable{
+    Validation Owner & Reviewer Name & Pending & --- \\
+    Systems Engineering & Reviewer Name & Pending & --- \\
+    Product / Project Lead & Reviewer Name & Pending & --- \\
+}

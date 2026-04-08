@@ -1,0 +1,38 @@
+\section{Incident Summary}
+
+\subsection{Observed Event}
+This report is intended for structured failure investigation, field return
+analysis, unexpected lab events, or systematic fault diagnosis. It should make
+the symptom, context, and containment state clear before hypotheses start to
+compete with one another.
+
+\dangerbox{
+Do not open the root-cause section with a guess. Start with the symptom,
+environment, and impact. Premature certainty is one of the fastest ways to
+damage a good investigation.
+}
+
+\subsection{Event Timeline}
+\begin{table}[H]
+    \centering
+    \small
+    \begin{tabular}{p{2.4cm} p{3.0cm} p{5.5cm}}
+        \toprule
+        \textbf{Timestamp} & \textbf{Observed By} & \textbf{Event} \\
+        \midrule
+        09:15 & Test Engineer & Unit powered successfully and reached nominal operation. \\
+        09:23 & Test Engineer & Output collapsed during dynamic load transition. \\
+        09:25 & Lab Lead & Containment applied and additional stress testing stopped. \\
+        10:10 & Analysis Team & Preliminary evidence collection started. \\
+        \bottomrule
+    \end{tabular}
+    \caption{Example incident timeline}
+    \label{tab:incident-timeline}
+\end{table}
+
+\subsection{Impact Statement}
+\begin{itemize}
+    \item describe the operational impact on the system or customer-visible behavior;
+    \item record whether hardware damage, safety risk, or data corruption was observed;
+    \item state whether the issue is isolated, intermittent, or reproducible.
+\end{itemize}

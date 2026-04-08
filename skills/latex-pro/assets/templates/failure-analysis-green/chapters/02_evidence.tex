@@ -1,0 +1,38 @@
+\section{Evidence Collection}
+
+\subsection{Initial Findings}
+\begin{table}[H]
+    \centering
+    \small
+    \begin{tabular}{p{3.1cm} p{2.3cm} p{5.2cm}}
+        \toprule
+        \textbf{Evidence Item} & \textbf{Source} & \textbf{Observation} \\
+        \midrule
+        Waveform capture & Oscilloscope export & Output collapsed immediately after the load transient. \\
+        Thermal scan & Infrared image & Local hotspot observed near the switching path. \\
+        Physical inspection & Bench teardown & No visible catastrophic damage or discoloration. \\
+        Event log & Firmware / host logs & Protection event recorded with ambiguous fault code. \\
+        \bottomrule
+    \end{tabular}
+    \caption{Representative evidence log}
+    \label{tab:evidence-log}
+\end{table}
+
+\subsection{Evidence Visualization}
+\begin{figure}[H]
+    \centering
+    \begin{tikzpicture}
+        \draw[brandgreen, line width=1.2pt, rounded corners=4pt, fill=brandlightgreen] (0,0) rectangle (11,5.2);
+        \draw[brandgreen, line width=1pt] (0.8,0.8) rectangle (5.1,4.4);
+        \draw[brandgreen, line width=1pt] (5.9,0.8) rectangle (10.2,4.4);
+        \node[text width=3.6cm, align=center] at (2.95,2.6) {Placeholder for failing waveform or event timing plot};
+        \node[text width=3.6cm, align=center] at (8.05,2.6) {Placeholder for damaged area photo, thermal image, or microscope capture};
+    \end{tikzpicture}
+    \caption{Primary failure-analysis evidence placeholders}
+    \label{fig:failure-evidence}
+\end{figure}
+
+\notebox{
+Record the chain of custody for returned units or damaged samples if the
+investigation may support a supplier claim, warranty decision, or formal review.
+}

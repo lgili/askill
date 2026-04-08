@@ -1,0 +1,38 @@
+\section{Results, Deviations, and Follow-up}
+
+\subsection{Summary of Measured Outcomes}
+\begin{table}[H]
+    \centering
+    \small
+    \begin{tabular}{p{3.2cm} p{2.1cm} p{2.1cm} p{3.8cm}}
+        \toprule
+        \textbf{Metric} & \textbf{Target} & \textbf{Measured} & \textbf{Interpretation} \\
+        \midrule
+        Startup time & $< \SI{50}{\milli\second}$ & \SI{31}{\milli\second} & Meets nominal bring-up target. \\
+        Output regulation & $\pm 5\%$ & $\pm 1.8\%$ & Margin is acceptable for the current load range. \\
+        Peak temperature & $< \SI{90}{\celsius}$ & \SI{74}{\celsius} & Thermal headroom remains available. \\
+        Fault response latency & $< \SI{5}{\milli\second}$ & Pending & Requires high-speed trigger validation. \\
+        \bottomrule
+    \end{tabular}
+    \caption{Representative measured outcomes}
+    \label{tab:measured-outcomes}
+\end{table}
+
+\subsection{Observed Deviations}
+\riskbox{
+List every blocked or partially executed test here. A deferred case is not a
+minor note; it changes the decision quality of the report.
+}
+
+\makeactiontable{Open Actions After Test Campaign}{
+    Repeat abnormal-load protection capture with approved current-limit settings. & Safety Lead & 2026-04-15 & Open \\
+    Replace placeholder plots with signed scope exports from the final bench run. & Test Eng. & 2026-04-12 & In Progress \\
+    Review trigger configuration for the fault-latency measurement. & Systems Eng. & 2026-04-11 & Open \\
+}
+
+\subsection{Conclusion}
+\decisionbox{
+The document should end with a direct statement: either the test objective was
+met, met with restrictions, or remains open. Avoid vague language when the
+report is part of a release or approval gate.
+}

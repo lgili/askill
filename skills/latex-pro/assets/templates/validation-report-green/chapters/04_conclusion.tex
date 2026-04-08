@@ -1,0 +1,35 @@
+\section{Compliance Statement and Open Items}
+
+\subsection{Validation Outcome}
+\begin{table}[H]
+    \centering
+    \small
+    \begin{tabular}{l p{8.5cm}}
+        \toprule
+        \textbf{Outcome} & \textbf{Meaning} \\
+        \midrule
+        Fully validated & Evidence covers all acceptance criteria and no blocking gaps remain. \\
+        Conditionally validated & Main criteria pass, but explicit residual restrictions remain. \\
+        Not yet validated & One or more required claims remain unsupported or blocked. \\
+        \bottomrule
+    \end{tabular}
+    \caption{Recommended conclusion vocabulary}
+    \label{tab:validation-outcomes}
+\end{table}
+
+\makeactiontable{Residual Gaps and Follow-up Actions}{
+    Complete fault-recovery validation at worst-case operating temperature. & Validation Lead & 2026-04-18 & Open \\
+    Replace placeholder evidence with signed exports from the final campaign. & Test Eng. & 2026-04-12 & In Progress \\
+    Review requirement wording for thermal limit interpretation. & Systems Eng. & 2026-04-10 & Open \\
+}
+
+\decisionbox{
+End this document with an explicit claim. Example: ``The subsystem is
+conditionally validated for nominal operation, with the protection-recovery
+corner still pending final evidence.''
+}
+
+\dangerbox{
+If the report supports release approval, verify that every pending item is
+either accepted by a named decision-maker or closed with objective evidence.
+}

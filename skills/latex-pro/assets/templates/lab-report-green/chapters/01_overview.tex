@@ -1,0 +1,52 @@
+\section{System Overview}
+
+\subsection{Design Overview}
+This laboratory report documents the design intent, evaluation criteria, and
+technical reasoning for the circuit under test. It is structured to support
+engineering review, traceability, and follow-up validation.
+
+\textbf{Primary goals:}
+\begin{itemize}
+    \item explain the circuit purpose and boundaries;
+    \item summarize major design choices and assumptions;
+    \item record the most important sizing and validation results.
+\end{itemize}
+
+\specbox{
+The recommended use of this template is for engineering investigations, lab
+reports, circuit design justifications, and subsystem validation summaries.
+}
+
+\subsection{Scope and Interfaces}
+\begin{table}[H]
+    \centering
+    \small
+    \begin{tabular}{l p{10cm}}
+        \toprule
+        \textbf{Topic} & \textbf{Description} \\
+        \midrule
+        Input Domain & Describe the supply, signal, or stimulus applied during evaluation. \\
+        Output Domain & Describe the expected output behavior, load, or response. \\
+        Operating Limits & Summarize voltage, current, power, thermal, or timing boundaries. \\
+        External Dependencies & Mention firmware, power supplies, fixtures, or measurement equipment. \\
+        \bottomrule
+    \end{tabular}
+    \caption{High-level report scope}
+    \label{tab:scope}
+\end{table}
+
+\begin{figure}[H]
+    \centering
+    \begin{tikzpicture}
+        \draw[brandgreen, line width=1.2pt, rounded corners=4pt, fill=brandlightgreen] (0,0) rectangle (10,5.2);
+        \node[text width=8.5cm, align=center] at (5,2.6) {\Large Placeholder for system block diagram, board photo, or annotated schematic snapshot};
+    \end{tikzpicture}
+    \caption{Visual placeholder for the system overview}
+    \label{fig:overview}
+\end{figure}
+
+\notebox{
+If you later add a company logo in \texttt{img/brand-logo.png}, the cover and
+header will automatically use it. If no logo exists, the template falls back to
+plain brand text.
+}

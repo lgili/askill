@@ -1,0 +1,40 @@
+\section{Tradeoffs and Engineering Decisions}
+
+\subsection{Option Comparison}
+\begin{table}[H]
+    \centering
+    \small
+    \begin{tabular}{p{2.5cm} c c c p{3.5cm}}
+        \toprule
+        \textbf{Option} & \textbf{Perf.} & \textbf{Risk} & \textbf{Cost} & \textbf{Reasoning} \\
+        \midrule
+        Option A & High & Medium & High & Best technical margin but more integration effort. \\
+        Option B & Medium & Low & Medium & Balanced path for cost and schedule. \\
+        Option C & Medium & High & Low & Attractive cost profile but poor robustness margin. \\
+        \bottomrule
+    \end{tabular}
+    \caption{Representative architecture tradeoff table}
+    \label{tab:tradeoffs}
+\end{table}
+
+\subsection{Sizing or Budget Snapshot}
+Use this section for first-order engineering calculations that justify the chosen
+direction:
+
+\begin{align}
+    P_{budget} &= V_{in} \times I_{avg} \\
+    Margin_{thermal} &= T_{limit} - T_{measured} \\
+    Headroom_{timing} &= t_{allowed} - t_{observed}
+\end{align}
+
+\highlightbox{
+Keep calculations close to the design decision they support. Detached
+mathematics is easy to ignore during review.
+}
+
+\subsection{Key Decisions}
+\begin{itemize}
+    \item identify the selected concept and why it won;
+    \item state what evidence would invalidate the current choice;
+    \item capture which design parameter is most sensitive to requirement changes.
+\end{itemize}

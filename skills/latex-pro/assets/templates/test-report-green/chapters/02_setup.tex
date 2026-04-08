@@ -1,0 +1,52 @@
+\section{Bench Setup and Instrumentation}
+
+\subsection{Environment}
+\begin{table}[H]
+    \centering
+    \small
+    \begin{tabular}{l p{9.7cm}}
+        \toprule
+        \textbf{Category} & \textbf{Recommended Content} \\
+        \midrule
+        Input Source & Supply model, programmed limits, and remote-sense configuration. \\
+        Load Condition & Electronic load profile, passive load values, or emulated mission profile. \\
+        Instrumentation & Oscilloscope, probes, meters, analyzers, temperature sensors, and calibration status. \\
+        Environmental Conditions & Ambient temperature, airflow, thermal chamber settings, or enclosure conditions. \\
+        Safety Controls & Current limits, interlocks, fuse ratings, or emergency shutdown rules. \\
+        \bottomrule
+    \end{tabular}
+    \caption{Bench environment checklist}
+    \label{tab:bench-environment}
+\end{table}
+
+\subsection{Physical Setup}
+\begin{figure}[H]
+    \centering
+    \begin{tikzpicture}
+        \draw[brandgreen, line width=1.2pt, rounded corners=4pt, fill=brandlightgreen] (0,0) rectangle (11,5.4);
+        \draw[brandgreen, line width=1pt] (0.8,1.1) rectangle (3.2,4.2);
+        \draw[brandgreen, line width=1pt] (4.3,1.1) rectangle (6.7,4.2);
+        \draw[brandgreen, line width=1pt] (7.8,1.1) rectangle (10.2,4.2);
+        \draw[brandgreen, -latex, line width=1pt] (3.2,2.65) -- (4.3,2.65);
+        \draw[brandgreen, -latex, line width=1pt] (6.7,2.65) -- (7.8,2.65);
+        \node at (2.0,2.65) {Source};
+        \node at (5.5,2.65) {DUT};
+        \node at (9.0,2.65) {Load};
+        \node[text width=9cm, align=center] at (5.5,0.45) {Placeholder for bench photo, wiring diagram, or measurement-point annotation};
+    \end{tikzpicture}
+    \caption{Bench configuration overview}
+    \label{fig:test-bench}
+\end{figure}
+
+\specbox{
+Good test reports show exact probe locations, channel naming, and triggering
+strategy. If reviewers cannot reproduce the waveform capture, the result is not
+auditable.
+}
+
+\subsection{Critical Components and Fixtures}
+\makecomponenttable{Representative DUT and fixture components}{
+    U1 & Primary controller, processor, or regulator & CTRL-1000 & Generic Components \\
+    J1 & Test header or instrumentation breakout & HDR-IO16 & Generic Connectivity \\
+    Q1 & Main power-switch or actuator path element & SWT-45A & Generic Power Devices \\
+}

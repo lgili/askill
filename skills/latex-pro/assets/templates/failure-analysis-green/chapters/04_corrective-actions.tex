@@ -1,0 +1,31 @@
+\section{Corrective Actions and Verification}
+
+\subsection{Containment and CAPA Plan}
+\makeactiontable{Corrective and Preventive Actions}{
+    Reproduce the failure with instrumented switching-node capture. & Failure Team & 2026-04-11 & In Progress \\
+    Review component derating against measured stress envelope. & Design Lead & 2026-04-13 & Open \\
+    Update fault-code mapping and service guide for the observed condition. & Firmware Lead & 2026-04-16 & Open \\
+}
+
+\subsection{Verification Strategy}
+\begin{table}[H]
+    \centering
+    \small
+    \begin{tabular}{p{3.5cm} p{3.1cm} p{1.8cm} p{3.1cm}}
+        \toprule
+        \textbf{Verification Step} & \textbf{Success Condition} & \textbf{Owner} & \textbf{Comment} \\
+        \midrule
+        Reproduce under controlled bench setup & Failure signature appears consistently & Lab Team & Confirms the scenario is real and repeatable. \\
+        Apply corrective design or control change & Symptom no longer appears & Design Team & Validate across nominal and corner conditions. \\
+        Re-run guardband checks & No new regression introduced & Validation Team & Check thermal, startup, and abnormal-load conditions. \\
+        \bottomrule
+    \end{tabular}
+    \caption{Recommended failure-closure verification matrix}
+    \label{tab:failure-verification}
+\end{table}
+
+\riskbox{
+Do not close the investigation just because the symptom disappeared once. The
+final section should state what evidence proves the issue is fixed and what
+residual risk remains.
+}

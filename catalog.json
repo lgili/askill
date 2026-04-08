@@ -3,14 +3,35 @@
   "repo": "lgili/skillex",
   "ref": "main",
   "skills": [
-    { "id": "code-review" },
-    { "id": "commit-craft" },
-    { "id": "cpp-pro" },
-    { "id": "create-skills" },
-    { "id": "error-handling" },
-    { "id": "python-pro" },
-    { "id": "secure-defaults" },
-    { "id": "test-discipline" },
-    { "id": "typescript-pro" }
+    {
+      "id": "code-review"
+    },
+    {
+      "id": "commit-craft"
+    },
+    {
+      "id": "cpp-pro"
+    },
+    {
+      "id": "create-skills"
+    },
+    {
+      "id": "error-handling"
+    },
+    {
+      "id": "latex-pro"
+    },
+    {
+      "id": "python-pro"
+    },
+    {
+      "id": "secure-defaults"
+    },
+    {
+      "id": "test-discipline"
+    },
+    {
+      "id": "typescript-pro"
+    }
   ]
 }

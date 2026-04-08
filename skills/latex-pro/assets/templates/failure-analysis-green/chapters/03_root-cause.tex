@@ -1,0 +1,33 @@
+\section{Hypothesis Testing and Root Cause}
+
+\subsection{Candidate Causes}
+\begin{table}[H]
+    \centering
+    \small
+    \begin{tabular}{p{3.3cm} p{2.1cm} p{2.2cm} p{3.9cm}}
+        \toprule
+        \textbf{Hypothesis} & \textbf{Likelihood} & \textbf{Evidence Status} & \textbf{Comment} \\
+        \midrule
+        Control-loop instability during load transition & Medium & Open & Requires replay under instrumented conditions. \\
+        Component overstress on switching node & High & Supported & Correlates with hotspot and event timing. \\
+        Fixture or cabling artifact & Low & Partially ruled out & Reproduction with alternate setup still recommended. \\
+        Firmware fault handling defect & Medium & Open & Needs trace review and fault-code decode. \\
+        \bottomrule
+    \end{tabular}
+    \caption{Root-cause hypothesis table}
+    \label{tab:root-cause-hypotheses}
+\end{table}
+
+\subsection{Structured Reasoning}
+\begin{enumerate}
+    \item State the strongest evidence supporting each hypothesis.
+    \item State the evidence that contradicts it.
+    \item Define the next experiment that would separate the leading candidates.
+    \item Avoid collapsing multiple contributing causes into a single vague label.
+\end{enumerate}
+
+\decisionbox{
+If a root cause is claimed, name the direct cause, contributing condition, and
+missing control separately. This avoids weak conclusions such as ``component
+failed'' without explaining why.
+}

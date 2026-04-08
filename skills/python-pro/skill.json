@@ -1,0 +1,48 @@
+{
+  "id": "python-pro",
+  "name": "Python Pro",
+  "version": "1.0.0",
+  "description": "Senior Python engineering for architecture, typing, testing, reliability, delivery, and migration work across libraries, CLIs, APIs, workers, async services, and data pipelines.",
+  "author": "lgili",
+  "tags": [
+    "python",
+    "typing",
+    "pytest",
+    "ruff",
+    "mypy",
+    "pyright",
+    "architecture",
+    "quality-gates"
+  ],
+  "compatibility": [
+    "codex",
+    "copilot",
+    "cline",
+    "cursor",
+    "claude",
+    "gemini",
+    "windsurf"
+  ],
+  "entry": "SKILL.md",
+  "files": [
+    "SKILL.md",
+    "agents/openai.yaml",
+    "references/architecture-and-design.md",
+    "references/code-quality-and-style.md",
+    "references/testing-strategy.md",
+    "references/performance-and-reliability.md",
+    "references/tooling-and-delivery.md",
+    "references/async-and-concurrency.md",
+    "references/project-audit-and-migrations.md",
+    "scripts/bootstrap_python_project.py",
+    "scripts/run_quality_gates.py",
+    "scripts/scaffold_test_template.py",
+    "scripts/audit_python_project.py"
+  ],
+  "scripts": {
+    "bootstrap": "python scripts/bootstrap_python_project.py",
+    "quality": "python scripts/run_quality_gates.py",
+    "scaffold-test": "python scripts/scaffold_test_template.py",
+    "audit": "python scripts/audit_python_project.py"
+  }
+}

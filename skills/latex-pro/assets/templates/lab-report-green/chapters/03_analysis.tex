@@ -1,0 +1,56 @@
+\section{Analysis and Calculations}
+
+\subsection{Parameter Summary}
+\begin{table}[H]
+    \centering
+    \small
+    \begin{tabular}{l l l}
+        \toprule
+        \textbf{Parameter} & \textbf{Value} & \textbf{Comment} \\
+        \midrule
+        Nominal Input & \SI{12}{\volt} & Replace with the real operating point. \\
+        Nominal Load Current & \SI{1.2}{\ampere} & Use measured or derived value. \\
+        Switching Frequency & \SI{400}{\kilo\hertz} & Include if the design is switching-based. \\
+        Thermal Ambient & \SI{50}{\celsius} & State the actual design assumption. \\
+        \bottomrule
+    \end{tabular}
+    \caption{Example design parameters}
+    \label{tab:parameters}
+\end{table}
+
+\subsection{Illustrative Sizing}
+Use this section to document calculations that justify component values or
+operating margins:
+
+\begin{align}
+    P_{out} &= V_{out} \times I_{out} \\
+    \eta &= \frac{P_{out}}{P_{in}} \\
+    P_{loss} &= P_{in} - P_{out}
+\end{align}
+
+\highlightbox{
+Keep calculations reproducible. If a value comes from simulation, bench data, or
+datasheet assumptions, say so explicitly.
+}
+
+\subsection{Design Notes}
+\begin{itemize}
+    \item explain why this topology or component family was selected;
+    \item identify the limiting component or dominant loss path;
+    \item summarize important design margins and unresolved assumptions.
+\end{itemize}
+
+\begin{figure}[H]
+    \centering
+    \begin{tikzpicture}
+        \draw[brandgreen, line width=1pt] (0,0) rectangle (10,4.8);
+        \draw[brandgreen, line width=1pt] (1.2,1.2) rectangle (3.8,3.6);
+        \draw[brandgreen, line width=1pt] (6.2,1.2) rectangle (8.8,3.6);
+        \draw[brandgreen, -latex, line width=1pt] (3.8,2.4) -- (6.2,2.4);
+        \node at (2.5,2.4) {Source};
+        \node at (7.5,2.4) {Load};
+        \node[text width=8cm, align=center] at (5,0.5) {Placeholder for simplified power-path, control, or measurement flow diagram};
+    \end{tikzpicture}
+    \caption{Example schematic abstraction or analysis flow}
+    \label{fig:analysis-placeholder}
+\end{figure}

@@ -1,0 +1,38 @@
+\section{Evidence Package}
+
+\subsection{Evidence Summary}
+\begin{table}[H]
+    \centering
+    \small
+    \begin{tabular}{p{2.8cm} p{2.8cm} p{2.3cm} p{3.5cm}}
+        \toprule
+        \textbf{Artifact} & \textbf{Source} & \textbf{Revision} & \textbf{Comment} \\
+        \midrule
+        Startup waveform set & Bench oscilloscope export & Rev. A & Covers min, nominal, and max input. \\
+        Thermal image package & Lab thermal camera session & Rev. A & Cross-checked with point measurements. \\
+        Simulation correlation note & Engineering analysis & Rev. B & Used to justify untested corner estimate. \\
+        Review checklist & Internal review record & Rev. A & Captures sign-off comments and open items. \\
+        \bottomrule
+    \end{tabular}
+    \caption{Representative validation evidence inventory}
+    \label{tab:evidence-inventory}
+\end{table}
+
+\subsection{Evidence Visualization}
+\begin{figure}[H]
+    \centering
+    \begin{tikzpicture}
+        \draw[brandgreen, line width=1.2pt, rounded corners=4pt, fill=brandlightgreen] (0,0) rectangle (11,5.3);
+        \draw[brandgreen, line width=1pt] (0.9,0.9) rectangle (5.0,4.4);
+        \draw[brandgreen, line width=1pt] (6.0,0.9) rectangle (10.1,4.4);
+        \node[text width=3.4cm, align=center] at (2.95,2.65) {Placeholder for validation plot or measurement trend};
+        \node[text width=3.4cm, align=center] at (8.05,2.65) {Placeholder for thermal image, screenshot, or requirement cross-check figure};
+    \end{tikzpicture}
+    \caption{Example placement for primary validation evidence}
+    \label{fig:validation-evidence}
+\end{figure}
+
+\notebox{
+When possible, pair each primary figure with a table or note that states the
+exact test condition, not just a descriptive caption.
+}
