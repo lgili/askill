@@ -158,6 +158,29 @@ test("syncInstalledSkills preserva conteudo manual e injeta auto-inject em copil
   assert.match(content, /Sempre lembre de aplicar esta skill\./);
 });
 
+test("syncInstalledSkills sincroniza todos os adapters detectados quando nenhum override e informado", async (t: TestContext) => {
+  const cwd = await fs.mkdtemp(path.join(os.tmpdir(), "skillex-sync-multi-adapter-"));
+  t.after(async () => {
+    await fs.rm(cwd, { recursive: true, force: true });
+  });
+
+  await writeText(path.join(cwd, ".github", "copilot-instructions.md"), "# Manual\n");
+  await fs.mkdir(path.join(cwd, ".codex"), { recursive: true });
+
+  await setupInstalledSkill(cwd, { autoInject: true });
+  const result = await syncInstalledSkills({
+    cwd,
+    now: () => "2026-04-06T00:20:00.000Z",
+  });
+
+  assert.deepEqual(
+    result.syncs.map((entry) => entry.adapter),
+    ["copilot", "codex"],
+  );
+  assert.equal(await pathExists(path.join(cwd, ".github", "copilot-instructions.md")), true);
+  assert.equal(await isSymlink(path.join(cwd, ".codex", "skills", "git-master")), true);
+});
+
 test("syncInstalledSkills remove bloco auto-inject quando nao ha skills elegiveis", async (t: TestContext) => {
   const cwd = await fs.mkdtemp(path.join(os.tmpdir(), "skillex-sync-remove-auto-"));
   t.after(async () => {
@@ -405,7 +428,7 @@ test("syncAdapterFiles faz fallback para copy quando symlink falha", async (t: T
   assert.equal(await isSymlink(path.join(cwd, ".clinerules", "skillex-skills.md")), false);
 });
 
-test("auto-sync roda apos install, update e remove quando habilitado", async (t: TestContext) => {
+test("auto-sync roda por padrao apos install, update e remove", async (t: TestContext) => {
   const cwd = await fs.mkdtemp(path.join(os.tmpdir(), "skillex-auto-sync-"));
   t.after(async () => {
     await fs.rm(cwd, { recursive: true, force: true });
@@ -415,7 +438,6 @@ test("auto-sync roda apos install, update e remove quando habilitado", async (t:
     cwd,
     repo: "example/skills",
     adapter: "copilot",
-    autoSync: true,
     now: () => "2026-04-06T00:00:00.000Z",
   });
 

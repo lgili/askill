@@ -41,13 +41,9 @@ npx skillex@latest list
 
 # 3. Install a skill
 npx skillex@latest install create-skills
-
-# 4. Write the installed skills into your agent's config file
-#    ⚠️  This step is required — without it, your agent cannot see the skills.
-npx skillex@latest sync
 ```
 
-> **Important:** `install` only stores skills in Skillex managed state. `sync` is what exposes them to your AI agent. For directory-native adapters such as Codex, Claude, and Gemini, `sync` materializes one folder per skill under the agent's `skills/` directory. For file-based adapters such as Copilot, Cursor, Cline, and Windsurf, `sync` updates the adapter's config file. **You must run `sync` after every install or update for your agent to pick up the changes.** Use `--auto-sync` at `init` time to have this happen automatically.
+> **Important:** auto-sync is enabled by default. After `init`, `install`, `update`, and `remove`, Skillex automatically synchronizes skills into every detected adapter target. For directory-native adapters such as Codex, Claude, and Gemini, this materializes one folder per skill under the agent's `skills/` directory. For file-based adapters such as Copilot, Cursor, Cline, and Windsurf, it updates the adapter config file. Use `skillex sync` when you want to preview, re-run manually, or target a specific adapter.
 
 After `init`, Skillex saves the configured source list in the local lockfile. New workspaces start with `lgili/skillex@main` by default, and you can add more sources later with `skillex source add`.
 
@@ -88,6 +84,7 @@ skillex init
 skillex init --repo <owner/repo>
 skillex init --repo lgili/skillex --adapter cursor
 skillex init --repo lgili/skillex --auto-sync
+skillex init --auto-sync=false
 skillex init --global --adapter codex
 ```
 
@@ -95,7 +92,7 @@ skillex init --global --adapter codex
 |------|-------------|
 | `--repo <owner/repo>` | Optional. Overrides the default first-party source for this workspace. |
 | `--adapter <id>` | Force a specific adapter instead of auto-detecting. |
-| `--auto-sync` | Automatically run `sync` after every install, update, and remove. |
+| `--auto-sync` | Enable or disable automatic sync after install, update, and remove. Default: `true`. |
 | `--ref <branch>` | Use a specific branch or tag (default: `main`). |
 | `--scope <local\|global>` | Choose whether Skillex manages workspace or user-global state. |
 | `--global` | Shortcut for `--scope global`. |
@@ -173,7 +170,7 @@ skillex install create-skills --global
 | `--scope <local\|global>` | Choose whether Skillex writes to `.agent-skills/` or `~/.skillex/`. |
 | `--global` | Shortcut for `--scope global`. |
 
-> **After installing,** run `skillex sync` to write the skills into your agent's config file. Without this step, the agent will not see the newly installed skills. If you initialized with `--auto-sync`, this happens automatically.
+> **After installing,** Skillex syncs automatically by default. Run `skillex sync` manually only when you want to preview changes, re-run synchronization, or force a specific adapter.
 
 ---
 
@@ -208,10 +205,10 @@ skillex remove create-skills --global
 
 ### `sync`
 
-Expose all installed skills to the active adapter. For `codex`, `claude`, and `gemini`, this creates one folder per skill under the adapter's `skills/` directory. For file-based adapters, it updates the adapter's config file. **This is the step that makes skills visible to your AI agent.** Run it after every `install`, `update`, or `remove`.
+Expose all installed skills to the detected adapters. For `codex`, `claude`, and `gemini`, this creates one folder per skill under the adapter's `skills/` directory. For file-based adapters, it updates the adapter's config file. This is the same operation Skillex runs automatically after `install`, `update`, and `remove`.
 
 ```bash
-# Sync to the detected adapter
+# Sync to all detected adapters
 skillex sync
 
 # Preview changes without writing (shows a diff)
@@ -237,22 +234,17 @@ skillex sync --global --adapter codex
 
 #### Using multiple agents in the same workspace
 
-`sync` writes to one adapter at a time. If you use more than one AI agent in the same folder (e.g. Claude and Codex), run `sync` once for each:
+By default, `sync` writes to every detected adapter in the workspace. If you want to limit the operation to one adapter, pass `--adapter`:
 
 ```bash
-# Write skill folders into .claude/skills/<skill-id>/
+# Only sync Claude
 skillex sync --adapter claude
 
-# Write skill folders into .codex/skills/<skill-id>/
+# Only sync Codex
 skillex sync --adapter codex
 ```
 
-Each adapter writes to its own target path, so the two syncs are independent and non-destructive. To avoid running both commands manually after every change, initialize with `--auto-sync` and then re-run `skillex init --adapter <id>` for each adapter you want covered — or simply alias both commands in your workflow:
-
-```bash
-# Sync to all agents at once (shell alias / Makefile target)
-skillex sync --adapter claude && skillex sync --adapter codex
-```
+Each adapter writes to its own target path, so the syncs are independent and non-destructive. Automatic sync uses the same multi-adapter behavior.
 
 ---
 
@@ -580,14 +572,14 @@ For directory-native adapters, `sync` creates per-skill directories such as:
 
 ## Auto-sync
 
-When `--auto-sync` is enabled at `init`, Skillex runs `sync` automatically after every `install`, `update`, and `remove`. This keeps your agent target path always up to date.
+Auto-sync is enabled by default. After `init`, Skillex automatically runs sync after every `install`, `update`, and `remove`, targeting every detected adapter unless you explicitly override one with `--adapter`.
 
 ```bash
-# Enable at init time
+# Explicitly enable at init time
 skillex init --auto-sync
 
-# Or re-initialize to enable it
-skillex init --repo lgili/skillex --auto-sync
+# Explicitly disable it
+skillex init --auto-sync=false
 
 # Enable it for global installs
 skillex init --global --adapter codex --auto-sync

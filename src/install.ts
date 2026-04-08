@@ -93,12 +93,6 @@ export async function initProject(options: ProjectOptions = {}): Promise<InitPro
       lockfile.sources = [toLockfileSource(source)];
     }
     lockfile.settings.autoSync = options.autoSync ?? lockfile.settings.autoSync;
-    if (lockfile.settings.autoSync && !lockfile.adapters.active) {
-      throw new InstallError(
-        "Auto-sync requires an active adapter. Use --adapter <id> or run in a detectable workspace.",
-        "AUTO_SYNC_REQUIRES_ADAPTER",
-      );
-    }
     lockfile.updatedAt = now();
     await writeJson(statePaths.lockfilePath, lockfile);
 
@@ -203,7 +197,8 @@ export async function installSkills(
         {
           cwd,
           scope: options.scope,
-          adapter: lockfile.adapters.active,
+          adapters: lockfile.adapters,
+          adapterOverride: options.adapter,
           enabled: lockfile.settings.autoSync,
           now,
           changed: installedSkills.length > 0,
@@ -310,7 +305,8 @@ export async function updateInstalledSkills(
         {
           cwd,
           scope: options.scope,
-          adapter: lockfile.adapters.active,
+          adapters: lockfile.adapters,
+          adapterOverride: options.adapter,
           enabled: lockfile.settings.autoSync,
           now,
           changed: updatedSkills.length > 0,
@@ -386,7 +382,8 @@ export async function removeSkills(
         {
           cwd,
           scope: options.scope,
-          adapter: lockfile.adapters.active,
+          adapters: lockfile.adapters,
+          adapterOverride: options.adapter,
           syncHistory: lockfile.syncHistory,
           legacySync: lockfile.sync,
           enabled: lockfile.settings.autoSync,
@@ -434,8 +431,8 @@ export async function syncInstalledSkills(options: ProjectOptions = {}): Promise
 
     const defaultSource = resolveSource(toCatalogSourceInput(options, resolvePrimarySourceOverride(options, existing)));
     const lockfile = normalizeLockfile(existing, defaultSource, now);
-    const adapterId = options.adapter || lockfile.adapters.active;
-    if (!adapterId) {
+    const adapterIds = resolveSyncAdapterIds(lockfile.adapters, options.adapter);
+    if (adapterIds.length === 0) {
       throw new InstallError(
         "No active adapter configured. Run: skillex init --adapter <id> or use --adapter.",
         "ACTIVE_ADAPTER_MISSING",
@@ -446,55 +443,93 @@ export async function syncInstalledSkills(options: ProjectOptions = {}): Promise
       cwd,
       lockfile,
     });
-    const syncResult = await syncAdapterFiles({
-      cwd,
-      scope: statePaths.scope,
-      adapterId,
-      statePaths,
-      skills,
-      previousSkillIds: lockfile.syncHistory[adapterId]?.skillIds || lockfile.sync?.skillIds || [],
-      ...(options.mode ? { mode: options.mode } : {}),
-      ...(options.dryRun !== undefined ? { dryRun: options.dryRun } : {}),
-    });
+    const syncResults = [];
+    const diffParts: string[] = [];
+
+    for (const adapterId of adapterIds) {
+      const syncResult = await syncAdapterFiles({
+        cwd,
+        scope: statePaths.scope,
+        adapterId,
+        statePaths,
+        skills,
+        previousSkillIds: lockfile.syncHistory[adapterId]?.skillIds || lockfile.sync?.skillIds || [],
+        ...(options.mode ? { mode: options.mode } : {}),
+        ...(options.dryRun !== undefined ? { dryRun: options.dryRun } : {}),
+      });
+      syncResults.push(syncResult);
+      if (syncResult.diff.trim()) {
+        diffParts.push(syncResult.diff.trimEnd());
+      }
+    }
+
+    const primarySync = syncResults[0];
+    if (!primarySync) {
+      throw new InstallError(
+        "No adapter configured for synchronization. Use --adapter <id> or work in a detectable workspace.",
+        "ACTIVE_ADAPTER_MISSING",
+      );
+    }
 
     if (options.dryRun) {
       return {
         statePaths,
         sync: {
-          adapter: syncResult.adapter,
-          targetPath: syncResult.targetPath,
+          adapter: primarySync.adapter,
+          targetPath: primarySync.targetPath,
         },
+        syncs: syncResults.map((result) => ({
+          adapter: result.adapter,
+          targetPath: result.targetPath,
+          syncMode: result.syncMode,
+          changed: result.changed,
+        })),
         skillCount: skills.length,
-        changed: syncResult.changed,
-        diff: syncResult.diff,
+        changed: syncResults.some((result) => result.changed),
+        diff: diffParts.length > 0 ? `${diffParts.join("\n\n")}\n` : "",
         dryRun: true,
-        syncMode: syncResult.syncMode,
+        syncMode: primarySync.syncMode,
       };
     }
 
-    const syncMetadata = {
-      adapter: syncResult.adapter,
-      targetPath: syncResult.targetPath,
+    const primaryMetadata = {
+      adapter: primarySync.adapter,
+      targetPath: primarySync.targetPath,
       syncedAt: now(),
       skillIds: skills.map((skill) => skill.id),
     };
-    lockfile.sync = syncMetadata;
-    lockfile.syncHistory = {
+    const nextSyncHistory = {
       ...lockfile.syncHistory,
-      [adapterId]: syncMetadata,
+      [primarySync.adapter]: primaryMetadata,
     };
-    lockfile.syncMode = syncResult.syncMode;
+    for (const syncResult of syncResults.slice(1)) {
+      nextSyncHistory[syncResult.adapter] = {
+        adapter: syncResult.adapter,
+        targetPath: syncResult.targetPath,
+        syncedAt: now(),
+        skillIds: skills.map((skill) => skill.id),
+      };
+    }
+    lockfile.sync = primaryMetadata;
+    lockfile.syncHistory = nextSyncHistory;
+    lockfile.syncMode = primarySync.syncMode;
     lockfile.updatedAt = now();
     await writeJson(statePaths.lockfilePath, lockfile);
 
     return {
       statePaths,
-      sync: lockfile.sync,
+      sync: primaryMetadata,
+      syncs: syncResults.map((result) => ({
+        adapter: result.adapter,
+        targetPath: result.targetPath,
+        syncMode: result.syncMode,
+        changed: result.changed,
+      })),
       skillCount: skills.length,
-      changed: syncResult.changed,
-      diff: syncResult.diff,
+      changed: syncResults.some((result) => result.changed),
+      diff: diffParts.length > 0 ? `${diffParts.join("\n\n")}\n` : "",
       dryRun: false,
-      syncMode: syncResult.syncMode,
+      syncMode: primarySync.syncMode,
     };
   } catch (error) {
     throw toInstallError(error, "Failed to synchronize skills");
@@ -702,7 +737,7 @@ function createBaseLockfile(source: CatalogSource, now: NowFn): LockfileState {
       detected: [],
     },
     settings: {
-      autoSync: false,
+      autoSync: true,
     },
     sync: null,
     syncHistory: {},
@@ -848,7 +883,7 @@ function normalizeLockfile(existing: LockfileState | null, source: CatalogSource
       detected: [...new Set(detectedAdapters.filter(Boolean))],
     },
     settings: {
-      autoSync: Boolean(existing.settings?.autoSync),
+      autoSync: existing.settings?.autoSync ?? true,
     },
     sync: existing.sync || null,
     syncHistory: normalizeSyncHistory(existing),
@@ -1098,7 +1133,8 @@ async function maybeAutoSync(options: {
   cwd: string;
   scope?: InstallScope | undefined;
   agentSkillsDir?: string | undefined;
-  adapter: string | null;
+  adapters: LockfileState["adapters"];
+  adapterOverride?: string | undefined;
   enabled: boolean;
   now: NowFn;
   changed: boolean;
@@ -1108,11 +1144,15 @@ async function maybeAutoSync(options: {
     return null;
   }
 
+  if (resolveSyncAdapterIds(options.adapters, options.adapterOverride).length === 0) {
+    return null;
+  }
+
   return syncInstalledSkills({
     cwd: options.cwd,
     scope: options.scope || DEFAULT_INSTALL_SCOPE,
     ...(options.agentSkillsDir ? { agentSkillsDir: options.agentSkillsDir } : {}),
-    ...(options.adapter ? { adapter: options.adapter } : {}),
+    ...(options.adapterOverride ? { adapter: options.adapterOverride } : {}),
     ...(options.mode ? { mode: options.mode } : {}),
     now: options.now,
   });
@@ -1122,7 +1162,8 @@ async function maybeSyncAfterRemove(options: {
   cwd: string;
   scope?: InstallScope | undefined;
   agentSkillsDir?: string | undefined;
-  adapter: string | null;
+  adapters: LockfileState["adapters"];
+  adapterOverride?: string | undefined;
   syncHistory: SyncHistory;
   legacySync: LockfileState["sync"];
   enabled: boolean;
@@ -1141,8 +1182,12 @@ async function maybeSyncAfterRemove(options: {
   if (options.legacySync?.adapter) {
     adapters.add(options.legacySync.adapter);
   }
-  if (options.enabled && options.adapter) {
-    adapters.add(options.adapter);
+  if (options.adapterOverride) {
+    adapters.add(options.adapterOverride);
+  } else if (options.enabled) {
+    for (const adapterId of resolveSyncAdapterIds(options.adapters)) {
+      adapters.add(adapterId);
+    }
   }
 
   let result: SyncCommandResult | null = null;
@@ -1158,6 +1203,23 @@ async function maybeSyncAfterRemove(options: {
   }
 
   return result;
+}
+
+function resolveSyncAdapterIds(adapters: LockfileState["adapters"], adapterOverride?: string): string[] {
+  if (adapterOverride) {
+    return [adapterOverride];
+  }
+
+  const adapterIds: string[] = [];
+  if (adapters.active) {
+    adapterIds.push(adapters.active);
+  }
+  for (const adapterId of adapters.detected || []) {
+    if (!adapterIds.includes(adapterId)) {
+      adapterIds.push(adapterId);
+    }
+  }
+  return adapterIds;
 }
 
 function toCatalogSourceInput(

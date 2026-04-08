@@ -326,6 +326,16 @@ export interface SyncPreview {
 }
 
 /**
+ * Per-adapter sync summary returned to callers.
+ */
+export interface SyncExecutionSummary {
+  adapter: string;
+  targetPath: string;
+  syncMode: SyncWriteMode;
+  changed: boolean;
+}
+
+/**
  * Public sync result returned after writing or dry-run preparation.
  */
 export interface SyncResult {
@@ -361,6 +371,7 @@ export interface SyncCommandResult {
     adapter: string;
     targetPath: string;
   } | SyncMetadata;
+  syncs: SyncExecutionSummary[];
   skillCount: number;
   changed: boolean;
   diff: string;

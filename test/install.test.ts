@@ -84,6 +84,7 @@ test("initProject usa o catalogo official por padrao", async (t: TestContext) =>
 
   assert.equal(result.lockfile.sources[0]?.repo, "lgili/skillex");
   assert.equal(result.lockfile.sources[0]?.ref, "main");
+  assert.equal(result.lockfile.settings.autoSync, true);
 });
 
 test("lockfile com placeholder owner/repo cai de volta para o source padrao", async (t: TestContext) => {
@@ -211,6 +212,7 @@ test("escopos local e global mantem estados isolados", async (t: TestContext) =>
     agentSkillsDir: globalStateDir,
     repo: "example/skills",
     adapter: "codex",
+    autoSync: false,
     now: () => "2026-04-06T00:01:00.000Z",
   });
 

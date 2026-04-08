@@ -44,7 +44,7 @@ Options:
   --repo <owner/repo>   GitHub repository with skills (default: lgili/skillex)
   --ref <ref>           Branch, tag, or commit (default: main)
   --adapter <id>        Force a specific adapter
-  --auto-sync           Enable auto-sync after install/update/remove
+  --auto-sync           Enable or disable auto-sync (default: on)
   --scope <scope>       local or global (default: local)
   --global              Shortcut for --scope global
   --cwd <path>          Target project directory (default: current directory)
@@ -347,6 +347,9 @@ async function handleInit(flags: CliFlags, userConfig: UserConfig): Promise<void
   }
 
   output.info(`  Auto-sync: ${result.lockfile.settings.autoSync ? "enabled" : "disabled"}`);
+  if (result.lockfile.adapters.detected.length > 0) {
+    output.info(`  Detected : ${result.lockfile.adapters.detected.join(", ")}`);
+  }
   output.info("\nNext: run 'skillex list' to browse available skills");
 }
 
@@ -478,18 +481,20 @@ async function handleSync(flags: CliFlags, userConfig: UserConfig): Promise<void
   const result = await syncInstalledSkills(commonOptions(flags, userConfig));
 
   if (result.dryRun) {
-    output.info(`Preview: ${result.skillCount} skill(s) → ${result.sync.adapter}`);
-    output.info(`Target path : ${result.sync.targetPath}`);
-    output.info(`Sync mode   : ${result.syncMode}`);
+    output.info(`Preview: ${result.skillCount} skill(s)`);
+    for (const entry of result.syncs) {
+      output.info(`  ${entry.adapter} → ${entry.targetPath} [${entry.syncMode}]${entry.changed ? "" : " (no changes)"}`);
+    }
     process.stdout.write(result.diff);
     return;
   }
 
-  output.success(`Synced ${result.skillCount} skill(s) → ${result.sync.adapter}`);
-  output.info(`Target path : ${result.sync.targetPath}`);
-  output.info(`Sync mode   : ${result.syncMode}`);
+  output.success(`Synced ${result.skillCount} skill(s)`);
+  for (const entry of result.syncs) {
+    output.info(`  ${entry.adapter} → ${entry.targetPath} [${entry.syncMode}]${entry.changed ? "" : " (no changes)"}`);
+  }
   if (!result.changed) {
-    output.info("No changes to the target path.");
+    output.info("No changes to the target paths.");
   }
 }
 
@@ -1073,8 +1078,9 @@ function printAutoSyncResult(
     | Awaited<ReturnType<typeof removeSkills>>["autoSync"],
 ): void {
   if (!result) return;
-  const suffix = result.changed ? "" : " (no changes)";
-  output.info(`Sync: ${result.sync.adapter} → ${result.sync.targetPath} [${result.syncMode}]${suffix}`);
+  for (const entry of result.syncs) {
+    output.info(`Sync: ${entry.adapter} → ${entry.targetPath} [${entry.syncMode}]${entry.changed ? "" : " (no changes)"}`);
+  }
 }
 
 function asOptionalString(value: string | boolean | undefined): string | undefined {

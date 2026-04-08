@@ -2,3 +2,7 @@ node_modules/
 .agent-skills/
 dist/
 .test-dist/
+
+
+*.pyc
+__pycache__/
