@@ -180,8 +180,7 @@ test("syncInstalledSkills remove bloco auto-inject quando nao ha skills elegivei
   });
 
   assert.equal(result.syncMode, "copy");
-  const content = await fs.readFile(path.join(cwd, ".github", "copilot-instructions.md"), "utf8");
-  assert.doesNotMatch(content, /SKILLEX:AUTO-INJECT/);
+  assert.equal(await pathExists(path.join(cwd, ".github", "copilot-instructions.md")), false);
 });
 
 test("syncInstalledSkills cria symlink para adapters de arquivo dedicado por padrao", async (t: TestContext) => {
@@ -236,7 +235,7 @@ test("syncInstalledSkills materializa skills por pasta para codex e remove arqui
   assert.match(linkTarget, /^\.\.\/\.\.\/\.agent-skills\/skills\/git-master$/);
 });
 
-test("syncInstalledSkills remove skill directory antiga ao re-sincronizar codex", async (t: TestContext) => {
+test("removeSkills limpa skill sincronizada em adapter directory-native sem sync manual extra", async (t: TestContext) => {
   const cwd = await fs.mkdtemp(path.join(os.tmpdir(), "skillex-sync-codex-cleanup-"));
   t.after(async () => {
     await fs.rm(cwd, { recursive: true, force: true });
@@ -249,17 +248,41 @@ test("syncInstalledSkills remove skill directory antiga ao re-sincronizar codex"
     now: () => "2026-04-06T00:20:00.000Z",
   });
 
-  await removeSkills(["git-master"], {
+  const result = await removeSkills(["git-master"], {
     cwd,
     now: () => "2026-04-06T00:30:00.000Z",
   });
-  await syncInstalledSkills({
-    cwd,
-    adapter: "codex",
-    now: () => "2026-04-06T00:40:00.000Z",
+
+  assert.equal(result.autoSync?.sync.adapter, "codex");
+  assert.equal(await pathExists(path.join(cwd, ".codex", "skills", "git-master")), false);
+});
+
+test("removeSkills limpa arquivo gerenciado e fonte gerada quando a ultima skill sai", async (t: TestContext) => {
+  const cwd = await fs.mkdtemp(path.join(os.tmpdir(), "skillex-sync-managed-file-cleanup-"));
+  t.after(async () => {
+    await fs.rm(cwd, { recursive: true, force: true });
   });
 
-  assert.equal(await pathExists(path.join(cwd, ".codex", "skills", "git-master")), false);
+  await setupInstalledSkill(cwd, { adapter: "cline" });
+  await syncInstalledSkills({
+    cwd,
+    adapter: "cline",
+    now: () => "2026-04-06T00:20:00.000Z",
+  });
+
+  const targetPath = path.join(cwd, ".clinerules", "skillex-skills.md");
+  const generatedPath = path.join(cwd, ".agent-skills", "generated", "cline", "skillex-skills.md");
+  assert.equal(await pathExists(targetPath), true);
+  assert.equal(await pathExists(generatedPath), true);
+
+  const result = await removeSkills(["git-master"], {
+    cwd,
+    now: () => "2026-04-06T00:30:00.000Z",
+  });
+
+  assert.equal(result.autoSync?.sync.adapter, "cline");
+  assert.equal(await pathExists(targetPath), false);
+  assert.equal(await pathExists(generatedPath), false);
 });
 
 test("syncInstalledSkills suporta scope global para adapter directory-native", async (t: TestContext) => {
@@ -431,6 +454,5 @@ test("auto-sync roda apos install, update e remove quando habilitado", async (t:
 
   assert.ok(removeResult.autoSync);
   assert.equal(removeResult.autoSync.sync.adapter, "copilot");
-  content = await fs.readFile(path.join(cwd, ".github", "copilot-instructions.md"), "utf8");
-  assert.match(content, /Nenhuma skill instalada no momento\./);
+  assert.equal(await pathExists(path.join(cwd, ".github", "copilot-instructions.md")), false);
 });

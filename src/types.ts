@@ -192,6 +192,11 @@ export interface SyncMetadata {
 }
 
 /**
+ * Per-adapter synchronization metadata persisted in the lockfile.
+ */
+export type SyncHistory = Record<string, SyncMetadata>;
+
+/**
  * Full workspace lockfile structure.
  */
 export interface LockfileState {
@@ -202,6 +207,7 @@ export interface LockfileState {
   adapters: LockfileAdapters;
   settings: LockfileSettings;
   sync: SyncMetadata | null;
+  syncHistory: SyncHistory;
   syncMode: SyncWriteMode | null;
   installed: Record<string, InstalledSkillMetadata>;
 }
@@ -287,6 +293,7 @@ export interface PreparedSyncResult {
   absoluteTargetPath: string;
   targetPath: string;
   cleanupPaths: string[];
+  removeTarget?: boolean | undefined;
   changed: boolean;
   currentContent: string;
   nextContent: string;

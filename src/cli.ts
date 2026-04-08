@@ -1074,9 +1074,7 @@ function printAutoSyncResult(
 ): void {
   if (!result) return;
   const suffix = result.changed ? "" : " (no changes)";
-  output.info(
-    `Auto-sync: ${result.sync.adapter} → ${result.sync.targetPath} [${result.syncMode}]${suffix}`,
-  );
+  output.info(`Sync: ${result.sync.adapter} → ${result.sync.targetPath} [${result.syncMode}]${suffix}`);
 }
 
 function asOptionalString(value: string | boolean | undefined): string | undefined {

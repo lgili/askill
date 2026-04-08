@@ -34,6 +34,7 @@ import type {
   SkillManifest,
   InstallScope,
   SyncCommandResult,
+  SyncHistory,
   SyncWriteMode,
   UpdateInstalledSkillsResult,
 } from "./types.js";
@@ -380,12 +381,14 @@ export async function removeSkills(
 
     lockfile.updatedAt = now();
     await writeJson(statePaths.lockfilePath, lockfile);
-    const autoSync = await maybeAutoSync(
+    const autoSync = await maybeSyncAfterRemove(
       withAgentSkillsDir(
         {
           cwd,
           scope: options.scope,
           adapter: lockfile.adapters.active,
+          syncHistory: lockfile.syncHistory,
+          legacySync: lockfile.sync,
           enabled: lockfile.settings.autoSync,
           now,
           changed: removedSkills.length > 0,
@@ -449,7 +452,7 @@ export async function syncInstalledSkills(options: ProjectOptions = {}): Promise
       adapterId,
       statePaths,
       skills,
-      previousSkillIds: lockfile.sync?.skillIds || [],
+      previousSkillIds: lockfile.syncHistory[adapterId]?.skillIds || lockfile.sync?.skillIds || [],
       ...(options.mode ? { mode: options.mode } : {}),
       ...(options.dryRun !== undefined ? { dryRun: options.dryRun } : {}),
     });
@@ -469,11 +472,16 @@ export async function syncInstalledSkills(options: ProjectOptions = {}): Promise
       };
     }
 
-    lockfile.sync = {
+    const syncMetadata = {
       adapter: syncResult.adapter,
       targetPath: syncResult.targetPath,
       syncedAt: now(),
       skillIds: skills.map((skill) => skill.id),
+    };
+    lockfile.sync = syncMetadata;
+    lockfile.syncHistory = {
+      ...lockfile.syncHistory,
+      [adapterId]: syncMetadata,
     };
     lockfile.syncMode = syncResult.syncMode;
     lockfile.updatedAt = now();
@@ -697,6 +705,7 @@ function createBaseLockfile(source: CatalogSource, now: NowFn): LockfileState {
       autoSync: false,
     },
     sync: null,
+    syncHistory: {},
     syncMode: null,
     installed: {},
   };
@@ -842,9 +851,36 @@ function normalizeLockfile(existing: LockfileState | null, source: CatalogSource
       autoSync: Boolean(existing.settings?.autoSync),
     },
     sync: existing.sync || null,
+    syncHistory: normalizeSyncHistory(existing),
     syncMode: existing.syncMode || null,
     installed: existing.installed || {},
   };
+}
+
+function normalizeSyncHistory(existing: LockfileState | null): SyncHistory {
+  const history: SyncHistory = {};
+  const candidate =
+    existing && "syncHistory" in existing && existing.syncHistory && typeof existing.syncHistory === "object"
+      ? existing.syncHistory
+      : null;
+
+  if (candidate) {
+    for (const [adapterId, metadata] of Object.entries(candidate)) {
+      if (!metadata || typeof metadata !== "object") {
+        continue;
+      }
+      if (!("adapter" in metadata) || !("targetPath" in metadata) || !("syncedAt" in metadata)) {
+        continue;
+      }
+      history[adapterId] = metadata as SyncHistory[string];
+    }
+  }
+
+  if (existing?.sync?.adapter && !history[existing.sync.adapter]) {
+    history[existing.sync.adapter] = existing.sync;
+  }
+
+  return history;
 }
 
 /** Repos that are known placeholder values written by older versions and must be ignored. */
@@ -1080,6 +1116,48 @@ async function maybeAutoSync(options: {
     ...(options.mode ? { mode: options.mode } : {}),
     now: options.now,
   });
+}
+
+async function maybeSyncAfterRemove(options: {
+  cwd: string;
+  scope?: InstallScope | undefined;
+  agentSkillsDir?: string | undefined;
+  adapter: string | null;
+  syncHistory: SyncHistory;
+  legacySync: LockfileState["sync"];
+  enabled: boolean;
+  now: NowFn;
+  changed: boolean;
+  mode?: SyncWriteMode | undefined;
+}): Promise<SyncCommandResult | null> {
+  if (!options.changed) {
+    return null;
+  }
+
+  const adapters = new Set<string>();
+  for (const adapterId of Object.keys(options.syncHistory || {})) {
+    adapters.add(adapterId);
+  }
+  if (options.legacySync?.adapter) {
+    adapters.add(options.legacySync.adapter);
+  }
+  if (options.enabled && options.adapter) {
+    adapters.add(options.adapter);
+  }
+
+  let result: SyncCommandResult | null = null;
+  for (const adapterId of adapters) {
+    result = await syncInstalledSkills({
+      cwd: options.cwd,
+      scope: options.scope || DEFAULT_INSTALL_SCOPE,
+      ...(options.agentSkillsDir ? { agentSkillsDir: options.agentSkillsDir } : {}),
+      adapter: adapterId,
+      ...(options.mode ? { mode: options.mode } : {}),
+      now: options.now,
+    });
+  }
+
+  return result;
 }
 
 function toCatalogSourceInput(

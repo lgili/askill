@@ -88,7 +88,15 @@ export async function syncAdapterFiles(options: SyncOptions): Promise<SyncResult
     const prepared = await prepareSyncAdapterFiles(options);
 
     if (!options.dryRun) {
-      if (prepared.directoryEntries) {
+      if (prepared.removeTarget) {
+        if (prepared.generatedSourcePath) {
+          await removePath(prepared.generatedSourcePath);
+        }
+        await removePath(prepared.absoluteTargetPath);
+        for (const cleanupPath of prepared.cleanupPaths) {
+          await removePath(cleanupPath);
+        }
+      } else if (prepared.directoryEntries) {
         await ensureDir(prepared.absoluteTargetPath);
         const createLink = options.linkFactory || createSymlink;
         let finalMode = prepared.syncMode;
@@ -200,8 +208,30 @@ export async function prepareSyncAdapterFiles(
 
   if (adapter.syncMode === "managed-block") {
     const existing = (await readText(absoluteTargetPath, "")) || "";
-    const nextManaged = upsertManagedBlock(existing, wrapManagedBlock(MANAGED_START, MANAGED_END, body));
-    const nextContent = upsertAutoInjectBlock(nextManaged, autoInjectBlock);
+    const nextManaged =
+      options.skills.length === 0
+        ? upsertManagedBlock(existing, null)
+        : upsertManagedBlock(existing, wrapManagedBlock(MANAGED_START, MANAGED_END, body));
+    const nextContent = upsertAutoInjectBlock(nextManaged, options.skills.length === 0 ? null : autoInjectBlock);
+
+    if (nextContent === "") {
+      return {
+        adapter: adapter.id,
+        absoluteTargetPath,
+        targetPath,
+        cleanupPaths,
+        removeTarget: true,
+        changed: Boolean(normalizeComparableText(existing)) || cleanupPaths.length > 0,
+        currentContent: existing,
+        nextContent: "",
+        diff: createManagedBlockRemovalDiff({
+          targetPath,
+          currentContent: existing,
+          cleanupPaths: cleanupPaths.map((cleanupPath) => toDisplayPath(options.cwd, cleanupPath, options.statePaths.scope)),
+        }),
+        syncMode: "copy",
+      };
+    }
 
     return {
       adapter: adapter.id,
@@ -219,6 +249,38 @@ export async function prepareSyncAdapterFiles(
 
   const nextContent = buildManagedFileContent(adapter.id, body, autoInjectBlock);
   const requestedMode = options.mode || "symlink";
+  const generatedSourcePath = path.join(options.statePaths.generatedDirPath, adapter.id, path.basename(adapter.syncTarget));
+  if (options.skills.length === 0) {
+    const currentDescriptor = await describeTarget(absoluteTargetPath);
+    const currentVisibleContent = (await readText(absoluteTargetPath, "")) || "";
+    const generatedExists = await pathExists(generatedSourcePath);
+
+    return {
+      adapter: adapter.id,
+      absoluteTargetPath,
+      targetPath,
+      cleanupPaths,
+      removeTarget: true,
+      changed:
+        Boolean(normalizeComparableText(currentDescriptor)) ||
+        Boolean(normalizeComparableText(currentVisibleContent)) ||
+        generatedExists ||
+        cleanupPaths.length > 0,
+      currentContent: currentDescriptor,
+      nextContent: "",
+      diff: createManagedFileRemovalDiff({
+        targetPath,
+        generatedPath: toDisplayPath(options.cwd, generatedSourcePath, options.statePaths.scope),
+        generatedExists,
+        currentDescriptor,
+        currentContent: currentVisibleContent,
+        cleanupPaths: cleanupPaths.map((cleanupPath) => toDisplayPath(options.cwd, cleanupPath, options.statePaths.scope)),
+      }),
+      syncMode: requestedMode,
+      generatedSourcePath,
+    };
+  }
+
   if (requestedMode === "copy") {
     const existing = (await readText(absoluteTargetPath, "")) || "";
     return {
@@ -235,7 +297,6 @@ export async function prepareSyncAdapterFiles(
     };
   }
 
-  const generatedSourcePath = path.join(options.statePaths.generatedDirPath, adapter.id, path.basename(adapter.syncTarget));
   const currentDescriptor = await describeTarget(absoluteTargetPath);
   const currentVisibleContent = (await readText(absoluteTargetPath, "")) || "";
   const nextDescriptor = `symlink -> ${toPosix(path.relative(path.dirname(absoluteTargetPath), generatedSourcePath))}\n`;
@@ -460,7 +521,7 @@ function wrapManagedBlock(start: string, end: string, body: string): string {
   return [start, body.trim(), end, ""].join("\n");
 }
 
-function upsertManagedBlock(existingContent: string, blockContent: string): string {
+function upsertManagedBlock(existingContent: string, blockContent: string | null): string {
   return upsertNamedBlock(existingContent, blockContent, MANAGED_START, MANAGED_END, LEGACY_MANAGED_BLOCKS);
 }
 
@@ -572,6 +633,53 @@ function createManagedFileDiff(context: {
   }
   if (contentChanged) {
     parts.push(createTextDiff(context.currentContent, context.nextContent, context.generatedPath).trimEnd());
+  }
+  for (const cleanupPath of context.cleanupPaths) {
+    parts.push(`- remove ${cleanupPath}`);
+  }
+
+  return `${parts.join("\n")}\n`;
+}
+
+function createManagedBlockRemovalDiff(context: {
+  targetPath: string;
+  currentContent: string;
+  cleanupPaths: string[];
+}): string {
+  const parts: string[] = [];
+
+  if (normalizeComparableText(context.currentContent) !== "") {
+    parts.push(createTextDiff(context.currentContent, "", context.targetPath).trimEnd());
+  }
+  for (const cleanupPath of context.cleanupPaths) {
+    parts.push(`- remove ${cleanupPath}`);
+  }
+
+  if (parts.length === 0) {
+    return `Sem alteracoes em ${context.targetPath}.\n`;
+  }
+
+  return `${parts.join("\n")}\n`;
+}
+
+function createManagedFileRemovalDiff(context: {
+  targetPath: string;
+  generatedPath: string;
+  generatedExists: boolean;
+  currentDescriptor: string;
+  currentContent: string;
+  cleanupPaths: string[];
+}): string {
+  const parts: string[] = [];
+
+  if (normalizeComparableText(context.currentDescriptor) !== "") {
+    parts.push(createTextDiff(context.currentDescriptor, "", context.targetPath).trimEnd());
+  }
+  if (normalizeComparableText(context.currentContent) !== "") {
+    parts.push(createTextDiff(context.currentContent, "", context.targetPath).trimEnd());
+  }
+  if (context.generatedExists) {
+    parts.push(`- remove ${context.generatedPath}`);
   }
   for (const cleanupPath of context.cleanupPaths) {
     parts.push(`- remove ${cleanupPath}`);
