@@ -12,15 +12,15 @@ a { color: inherit; text-decoration: none; }
 
 /* ─── Theme tokens ───────────────────────────────────────────────────────── */
 :root {
-  --bg:           #09090b;
-  --bg-panel:     rgba(24, 24, 27, 0.70);
-  --bg-elevated:  #18181b;
-  --bg-hover:     rgba(39, 39, 42, 0.60);
-  --line:         rgba(63, 63, 70, 0.50);
-  --line-strong:  rgba(82, 82, 91, 0.70);
-  --text:         #f4f4f5;
-  --text-muted:   #71717a;
-  --text-dim:     #52525b;
+  --bg:           #1a1a1f;
+  --bg-panel:     rgba(30, 30, 36, 0.80);
+  --bg-elevated:  #242429;
+  --bg-hover:     rgba(52, 52, 60, 0.65);
+  --line:         rgba(80, 80, 92, 0.55);
+  --line-strong:  rgba(105, 105, 118, 0.75);
+  --text:         #f0f0f3;
+  --text-muted:   #9898a8;
+  --text-dim:     #70707e;
   --accent:       #10b981;
   --accent-hover: #34d399;
   --accent-soft:  rgba(16, 185, 129, 0.12);
