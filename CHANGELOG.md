@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.2] - 2026-04-08
+
+### Added
+- 9 first-party skills in the default catalog: `commit-craft`, `secure-defaults`, `error-handling`, `test-discipline`, `code-review`, `typescript-pro`, `python-pro`, `cpp-pro`, `latex-pro` — each with full reference files and bundled scripts
+- `create-skills` skill upgraded to advanced format: generates SKILL.md with Core Workflow, Reference Guide table, Constraints, and Output Template sections; `--references` flag scaffolds placeholder reference files automatically
+
+### Changed
+- `catalog.json` is now a slim index (`formatVersion: 2`): each entry contains only `{ "id" }` — no repeated metadata
+- Full skill metadata (name, version, description, tags, compatibility, files) now lives exclusively in each skill's `skill.json`
+- CLI catalog loader detects v2 format and fetches each `skill.json` in parallel to hydrate the full manifest
+
 ## [0.2.1] - 2026-04-07
 
 ### Changed
