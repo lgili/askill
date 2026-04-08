@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.5] - 2026-04-08
+
+### Added
+- `technical-writing-pro` first-party skill for structured technical writing and documentation
+
+### Changed
+- Auto-sync now enabled by default on `skillex init` (was `false`)
+- Auto-sync syncs **all detected adapters**, not only the active one — workspaces with multiple agents (e.g. `.claude/` and `.codex/`) are kept in sync automatically
+- `sync` and auto-sync output now lists each adapter individually with its target path, sync mode, and whether anything changed
+- Removed the restriction that required an active adapter to enable auto-sync
+
+### Fixed
+- Skill removal now cleans up the synced adapter target file and its generated source when the last skill is removed
+- `remove` correctly iterates all resolved adapters when propagating the removal
+
 ## [0.2.4] - 2026-04-08
 
 ### Changed
