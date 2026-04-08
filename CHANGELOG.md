@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-04-08
+
+### Added
+- `skillex ui` now launches a local HTTP server serving the interactive Vue/Vite SPA instead of a terminal TUI
+- New Vue 3 + Vite single-page application under `ui/` with catalog browser, skill detail pages, and router-based navigation
+- `src/web-ui.ts`: self-contained HTTP server with `/api/skills` and `/api/catalog` JSON endpoints and graceful shutdown
+- `src/markdown.ts`: shared Markdown-to-HTML renderer used by the web API
+- Terminal browser detection: `skillex ui` opens the local server in the platform default browser or a detected terminal viewer
+
+### Changed
+- `src/cli.ts`: `ui` command now delegates to the local web-UI server
+- `src/ui.ts`: updated to detect and delegate to terminal browser when available
+- Build: `npm run build` now runs `build:ui` (Vite) followed by `tsc`
+
 ## [0.2.5] - 2026-04-08
 
 ### Added
