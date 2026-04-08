@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.1] - 2026-04-08
+
+### Fixed
+- Web UI: translate all remaining Portuguese strings to English (`No sources.`, `Sync history`, `Error`/`Done` toasts, `Visible`, `Catalog`, `Skill detail`, `Version`, `Installed`/`Yes`/`No`, `Compatibility`, `Instructions`, `Instructions unavailable`)
+- Web UI dark theme: lift background and surface colors from near-black to a more comfortable dark grey; raise `--text-muted` and `--text-dim` contrast for better readability
+
 ## [0.3.0] - 2026-04-08
 
 ### Added
