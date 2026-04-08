@@ -1,0 +1,34 @@
+{
+  "id": "typescript-pro",
+  "name": "TypeScript Pro",
+  "version": "1.0.0",
+  "description": "Senior TypeScript engineering: strict mode, type design, generics, async patterns, ESM module boundaries, and production tooling with tsc, vitest, eslint, and prettier.",
+  "author": "lgili",
+  "tags": [
+    "typescript",
+    "strict",
+    "types",
+    "async",
+    "tooling"
+  ],
+  "compatibility": [
+    "codex",
+    "copilot",
+    "cline",
+    "cursor",
+    "claude",
+    "gemini",
+    "windsurf"
+  ],
+  "entry": "SKILL.md",
+  "files": [
+    "SKILL.md",
+    "references/type-system.md",
+    "references/async-patterns.md",
+    "references/module-design.md",
+    "references/tooling.md",
+    "references/advanced-patterns.md",
+    "scripts/bootstrap_ts_project.js",
+    "scripts/run_quality_gates.js"
+  ]
+}

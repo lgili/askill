@@ -1,0 +1,30 @@
+{
+  "id": "commit-craft",
+  "name": "Commit Craft",
+  "version": "1.0.0",
+  "description": "Git workflow discipline: atomic commits, Conventional Commits messages, clean PR descriptions, and safe branch management.",
+  "author": "lgili",
+  "tags": [
+    "git",
+    "workflow",
+    "commits",
+    "pull-requests"
+  ],
+  "compatibility": [
+    "codex",
+    "copilot",
+    "cline",
+    "cursor",
+    "claude",
+    "gemini",
+    "windsurf"
+  ],
+  "entry": "SKILL.md",
+  "files": [
+    "SKILL.md",
+    "references/conventional-commits.md",
+    "references/branching-strategy.md",
+    "references/pr-checklist.md",
+    "scripts/check_commit_msg.js"
+  ]
+}

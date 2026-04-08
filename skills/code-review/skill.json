@@ -1,0 +1,29 @@
+{
+  "id": "code-review",
+  "name": "Code Review",
+  "version": "1.0.0",
+  "description": "Systematic code review methodology: correctness, security, test coverage, maintainability checks, and structured feedback with blocker/suggestion/nit levels.",
+  "author": "lgili",
+  "tags": [
+    "code-review",
+    "quality",
+    "security",
+    "feedback"
+  ],
+  "compatibility": [
+    "codex",
+    "copilot",
+    "cline",
+    "cursor",
+    "claude",
+    "gemini",
+    "windsurf"
+  ],
+  "entry": "SKILL.md",
+  "files": [
+    "SKILL.md",
+    "references/review-checklist.md",
+    "references/security-review.md",
+    "references/feedback-guide.md"
+  ]
+}

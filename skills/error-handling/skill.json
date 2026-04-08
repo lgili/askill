@@ -1,0 +1,29 @@
+{
+  "id": "error-handling",
+  "name": "Error Handling",
+  "version": "1.0.0",
+  "description": "Error-first patterns: guard clauses, typed error classes, actionable messages, and explicit edge case coverage across TypeScript, Python, Go, and Rust.",
+  "author": "lgili",
+  "tags": [
+    "error-handling",
+    "robustness",
+    "typescript",
+    "python"
+  ],
+  "compatibility": [
+    "codex",
+    "copilot",
+    "cline",
+    "cursor",
+    "claude",
+    "gemini",
+    "windsurf"
+  ],
+  "entry": "SKILL.md",
+  "files": [
+    "SKILL.md",
+    "references/error-patterns.md",
+    "references/error-messages.md",
+    "references/error-by-language.md"
+  ]
+}

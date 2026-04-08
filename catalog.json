@@ -1,148 +1,16 @@
 {
-  "formatVersion": 1,
+  "formatVersion": 2,
   "repo": "lgili/skillex",
   "ref": "main",
   "skills": [
-    {
-      "id": "commit-craft",
-      "name": "Commit Craft",
-      "version": "1.0.0",
-      "description": "Git workflow discipline: atomic commits, Conventional Commits messages, clean PR descriptions, and safe branch management.",
-      "path": "skills/commit-craft",
-      "entry": "SKILL.md",
-      "files": [
-        "SKILL.md",
-        "references/conventional-commits.md",
-        "references/branching-strategy.md",
-        "references/pr-checklist.md",
-        "scripts/check_commit_msg.js"
-      ],
-      "compatibility": ["codex", "copilot", "cline", "cursor", "claude", "gemini", "windsurf"],
-      "tags": ["git", "workflow", "commits", "pull-requests"],
-      "author": "lgili"
-    },
-    {
-      "id": "secure-defaults",
-      "name": "Secure Defaults",
-      "version": "1.0.0",
-      "description": "Security-first code generation: secret management, input validation, authentication controls, dependency hygiene, and OWASP Top 10 awareness.",
-      "path": "skills/secure-defaults",
-      "entry": "SKILL.md",
-      "files": [
-        "SKILL.md",
-        "references/secret-management.md",
-        "references/input-validation.md",
-        "references/owasp-top10.md",
-        "references/dependency-security.md",
-        "scripts/scan_secrets.js"
-      ],
-      "compatibility": ["codex", "copilot", "cline", "cursor", "claude", "gemini", "windsurf"],
-      "tags": ["security", "owasp", "secrets", "validation"],
-      "author": "lgili"
-    },
-    {
-      "id": "error-handling",
-      "name": "Error Handling",
-      "version": "1.0.0",
-      "description": "Error-first patterns: guard clauses, typed error classes, actionable messages, and explicit edge case coverage across TypeScript, Python, Go, and Rust.",
-      "path": "skills/error-handling",
-      "entry": "SKILL.md",
-      "files": [
-        "SKILL.md",
-        "references/error-patterns.md",
-        "references/error-messages.md",
-        "references/error-by-language.md"
-      ],
-      "compatibility": ["codex", "copilot", "cline", "cursor", "claude", "gemini", "windsurf"],
-      "tags": ["error-handling", "robustness", "typescript", "python"],
-      "author": "lgili"
-    },
-    {
-      "id": "test-discipline",
-      "name": "Test Discipline",
-      "version": "1.0.0",
-      "description": "Testing habits: behavior-driven test structure, edge case coverage, smart mocking, and coverage policy for Vitest, Jest, pytest, and Node.js test runner.",
-      "path": "skills/test-discipline",
-      "entry": "SKILL.md",
-      "files": [
-        "SKILL.md",
-        "references/testing-patterns.md",
-        "references/mocking-guide.md",
-        "references/coverage-policy.md",
-        "scripts/scaffold_test.js"
-      ],
-      "compatibility": ["codex", "copilot", "cline", "cursor", "claude", "gemini", "windsurf"],
-      "tags": ["testing", "tdd", "coverage", "vitest", "jest", "pytest"],
-      "author": "lgili"
-    },
-    {
-      "id": "code-review",
-      "name": "Code Review",
-      "version": "1.0.0",
-      "description": "Systematic code review methodology: correctness, security, test coverage, maintainability checks, and structured feedback with blocker/suggestion/nit levels.",
-      "path": "skills/code-review",
-      "entry": "SKILL.md",
-      "files": [
-        "SKILL.md",
-        "references/review-checklist.md",
-        "references/security-review.md",
-        "references/feedback-guide.md"
-      ],
-      "compatibility": ["codex", "copilot", "cline", "cursor", "claude", "gemini", "windsurf"],
-      "tags": ["code-review", "quality", "security", "feedback"],
-      "author": "lgili"
-    },
-    {
-      "id": "typescript-pro",
-      "name": "TypeScript Pro",
-      "version": "1.0.0",
-      "description": "Senior TypeScript engineering: strict mode, type design, generics, async patterns, ESM module boundaries, and production tooling with tsc, vitest, eslint, and prettier.",
-      "path": "skills/typescript-pro",
-      "entry": "SKILL.md",
-      "files": [
-        "SKILL.md",
-        "references/type-system.md",
-        "references/async-patterns.md",
-        "references/module-design.md",
-        "references/tooling.md",
-        "references/advanced-patterns.md",
-        "scripts/bootstrap_ts_project.js",
-        "scripts/run_quality_gates.js"
-      ],
-      "compatibility": ["codex", "copilot", "cline", "cursor", "claude", "gemini", "windsurf"],
-      "tags": ["typescript", "strict", "types", "async", "tooling"],
-      "author": "lgili"
-    },
-    {
-      "id": "create-skills",
-      "name": "Create Skills",
-      "version": "0.2.0",
-      "description": "Bootstrap skill-catalog repositories and scaffold new skills with automatic root catalog registration.",
-      "path": "skills/create-skills",
-      "entry": "SKILL.md",
-      "files": [
-        "SKILL.md",
-        "agents/openai.yaml",
-        "references/repo-format.md",
-        "scripts/init_repo_skill.js",
-        "scripts/bootstrap_skill_repo.js",
-        "scripts/check_catalog.js"
-      ],
-      "compatibility": [
-        "codex",
-        "copilot",
-        "cline",
-        "cursor",
-        "claude",
-        "gemini",
-        "windsurf"
-      ],
-      "tags": [
-        "skills",
-        "catalog",
-        "scaffold"
-      ],
-      "author": "lgili"
-    }
+    { "id": "code-review" },
+    { "id": "commit-craft" },
+    { "id": "cpp-pro" },
+    { "id": "create-skills" },
+    { "id": "error-handling" },
+    { "id": "python-pro" },
+    { "id": "secure-defaults" },
+    { "id": "test-discipline" },
+    { "id": "typescript-pro" }
   ]
 }

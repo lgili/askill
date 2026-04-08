@@ -1,0 +1,31 @@
+{
+  "id": "secure-defaults",
+  "name": "Secure Defaults",
+  "version": "1.0.0",
+  "description": "Security-first code generation: secret management, input validation, authentication controls, dependency hygiene, and OWASP Top 10 awareness.",
+  "author": "lgili",
+  "tags": [
+    "security",
+    "owasp",
+    "secrets",
+    "validation"
+  ],
+  "compatibility": [
+    "codex",
+    "copilot",
+    "cline",
+    "cursor",
+    "claude",
+    "gemini",
+    "windsurf"
+  ],
+  "entry": "SKILL.md",
+  "files": [
+    "SKILL.md",
+    "references/secret-management.md",
+    "references/input-validation.md",
+    "references/owasp-top10.md",
+    "references/dependency-security.md",
+    "scripts/scan_secrets.js"
+  ]
+}

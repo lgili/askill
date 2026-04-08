@@ -1,8 +1,8 @@
 {
   "id": "create-skills",
   "name": "Create Skills",
-  "version": "0.2.0",
-  "description": "Bootstrap skill-catalog repositories and scaffold new skills with automatic root catalog registration.",
+  "version": "0.3.0",
+  "description": "Bootstrap skill-catalog repositories and scaffold new skills in the advanced format — Core Workflow, Reference Guide, Constraints, Output Template, and placeholder reference files.",
   "author": "lgili",
   "tags": [
     "skills",

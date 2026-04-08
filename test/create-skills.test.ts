@@ -18,7 +18,7 @@ test("createSkillScaffold cria a skill e registra no catalogo", async (t: TestCo
 
   await fs.writeFile(
     path.join(root, "catalog.json"),
-    `${JSON.stringify({ formatVersion: 1, repo: "lgili/skillex", ref: "main", skills: [] }, null, 2)}\n`,
+    `${JSON.stringify({ formatVersion: 2, repo: "lgili/skillex", ref: "main", skills: [] }, null, 2)}\n`,
     "utf8",
   );
 
@@ -35,11 +35,12 @@ test("createSkillScaffold cria a skill e registra no catalogo", async (t: TestCo
   assert.equal(await fileExists(path.join(root, "skills", "demo-skill", "skill.json")), true);
   assert.equal(await fileExists(path.join(root, "skills", "demo-skill", "agents", "openai.yaml")), true);
 
+  // catalog entry is slim — only id
   const catalog = JSON.parse(await fs.readFile(path.join(root, "catalog.json"), "utf8"));
   assert.equal(catalog.skills.length, 1);
-  assert.equal(catalog.skills[0].id, "demo-skill");
-  assert.deepEqual(catalog.skills[0].files, ["SKILL.md", "agents/openai.yaml"]);
+  assert.deepEqual(catalog.skills[0], { id: "demo-skill" });
 
+  // full metadata lives in skill.json
   const skillManifest = JSON.parse(
     await fs.readFile(path.join(root, "skills", "demo-skill", "skill.json"), "utf8"),
   );
@@ -54,7 +55,7 @@ test("createSkillScaffold cria a skill e registra no catalogo", async (t: TestCo
     "gemini",
     "windsurf",
   ]);
-  assert.deepEqual(catalog.skills[0].compatibility, skillManifest.compatibility);
+  assert.deepEqual(skillManifest.files, ["SKILL.md", "agents/openai.yaml"]);
 });
 
 test("createSkillRepoScaffold cria repo compativel e semeia create-skills no catalogo raiz", async (t: TestContext) => {
@@ -81,9 +82,10 @@ test("createSkillRepoScaffold cria repo compativel e semeia create-skills no cat
   assert.equal(await fileExists(path.join(root, "skills", "create-skills", "scripts", "check_catalog.js")), true);
 
   const catalog = JSON.parse(await fs.readFile(path.join(root, "catalog.json"), "utf8"));
+  assert.equal(catalog.formatVersion, 2);
   assert.equal(catalog.repo, "myorg/my-skills");
   assert.equal(catalog.skills.length, 1);
-  assert.equal(catalog.skills[0].id, "create-skills");
+  assert.deepEqual(catalog.skills[0], { id: "create-skills" });
 });
 
 test("repo bootstrapado consegue criar nova skill e manter catalogo raiz valido", async (t: TestContext) => {
@@ -110,44 +112,29 @@ test("repo bootstrapado consegue criar nova skill e manter catalogo raiz valido"
   assert.equal(validation.skillCount, 2);
 
   const catalog = JSON.parse(await fs.readFile(path.join(root, "catalog.json"), "utf8"));
-  assert.deepEqual(catalog.skills.map((skill: { id: string }) => skill.id), ["create-skills", "demo-skill"]);
-  assert.equal(catalog.skills[1].path, "skills/demo-skill");
+  assert.deepEqual(catalog.skills, [{ id: "create-skills" }, { id: "demo-skill" }]);
 });
 
-test("validateSkillRepoCatalog detecta arquivos faltando listados no catalogo", async (t: TestContext) => {
+test("validateSkillRepoCatalog detecta arquivos faltando listados no skill.json", async (t: TestContext) => {
   const root = await fs.mkdtemp(path.join(os.tmpdir(), "skillex-invalid-catalog-"));
   t.after(async () => {
     await fs.rm(root, { recursive: true, force: true });
   });
 
   await fs.mkdir(path.join(root, "skills", "broken-skill", "agents"), { recursive: true });
+
+  // slim catalog entry — only id
   await fs.writeFile(
     path.join(root, "catalog.json"),
     `${JSON.stringify(
-      {
-        formatVersion: 1,
-        repo: "myorg/my-skills",
-        ref: "main",
-        skills: [
-          {
-            id: "broken-skill",
-            name: "Broken Skill",
-            version: "0.1.0",
-            description: "broken",
-            path: "skills/broken-skill",
-            entry: "SKILL.md",
-            files: ["SKILL.md", "agents/openai.yaml"],
-            compatibility: [],
-            tags: [],
-            author: null,
-          },
-        ],
-      },
+      { formatVersion: 2, repo: "myorg/my-skills", ref: "main", skills: [{ id: "broken-skill" }] },
       null,
       2,
     )}\n`,
     "utf8",
   );
+
+  // skill.json declares files that don't exist on disk
   await fs.writeFile(
     path.join(root, "skills", "broken-skill", "skill.json"),
     `${JSON.stringify(
@@ -168,7 +155,7 @@ test("validateSkillRepoCatalog detecta arquivos faltando listados no catalogo", 
     "utf8",
   );
 
-  await assert.rejects(() => validateSkillRepoCatalog({ root }), /Arquivo listado no catalogo nao encontrado/);
+  await assert.rejects(() => validateSkillRepoCatalog({ root }), /File listed in skill\.json not found/);
 });
 
 test("catalogo first-party referencia arquivos reais", async () => {
@@ -177,16 +164,23 @@ test("catalogo first-party referencia arquivos reais", async () => {
 
   assert.ok(Array.isArray(catalog.skills));
   assert.ok(catalog.skills.length >= 1);
+  assert.equal(catalog.formatVersion, 2);
 
-  for (const skill of catalog.skills) {
-    const skillDir = path.join(root, skill.path);
-    assert.equal(await fileExists(skillDir), true, `skill dir missing: ${skill.path}`);
-    assert.equal(await fileExists(path.join(skillDir, "skill.json")), true, `skill.json missing: ${skill.id}`);
-    for (const relativePath of skill.files) {
+  for (const entry of catalog.skills) {
+    // catalog entries are slim: only id
+    assert.deepEqual(Object.keys(entry), ["id"]);
+
+    const skillDir = path.join(root, "skills", entry.id);
+    assert.equal(await fileExists(skillDir), true, `skill dir missing: skills/${entry.id}`);
+    assert.equal(await fileExists(path.join(skillDir, "skill.json")), true, `skill.json missing: ${entry.id}`);
+
+    // files are declared in skill.json, not in catalog
+    const manifest = JSON.parse(await fs.readFile(path.join(skillDir, "skill.json"), "utf8"));
+    for (const relativePath of manifest.files ?? []) {
       assert.equal(
         await fileExists(path.join(skillDir, relativePath)),
         true,
-        `catalog file missing: ${skill.id}/${relativePath}`,
+        `file missing: ${entry.id}/${relativePath}`,
       );
     }
   }

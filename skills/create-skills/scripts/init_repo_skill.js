@@ -21,6 +21,7 @@ export async function createSkillScaffold(options) {
   const author = (options.author || "lgili").trim();
   const compatibility = parseList(options.compatibility, DEFAULT_COMPATIBILITY);
   const tags = parseList(options.tags, []);
+  const references = parseList(options.references, []);
 
   const catalogPath = path.join(rootDir, "catalog.json");
   const catalog = await readCatalog(catalogPath, rootDir);
@@ -29,19 +30,25 @@ export async function createSkillScaffold(options) {
   const files = ["SKILL.md", "agents/openai.yaml"];
 
   if (await pathExists(skillDir)) {
-    throw new Error(`A pasta da skill ja existe: ${skillDir}`);
+    throw new Error(`Skill folder already exists: ${skillDir}`);
   }
 
   if (catalog.skills.some((skill) => skill.id === skillId)) {
-    throw new Error(`A skill "${skillId}" ja existe em catalog.json.`);
+    throw new Error(`Skill "${skillId}" already exists in catalog.json.`);
   }
 
   await fs.mkdir(path.join(skillDir, "agents"), { recursive: true });
   await fs.mkdir(path.join(skillDir, "scripts"), { recursive: true });
   await fs.mkdir(path.join(skillDir, "references"), { recursive: true });
-  await fs.mkdir(path.join(skillDir, "assets"), { recursive: true });
 
-  await fs.writeFile(path.join(skillDir, entry), buildSkillMarkdown(skillId, name, description), "utf8");
+  await fs.writeFile(path.join(skillDir, entry), buildSkillMarkdown(skillId, name, description, references), "utf8");
+  await fs.writeFile(path.join(skillDir, "agents", "openai.yaml"), buildOpenAiYaml(skillId, name, description), "utf8");
+
+  for (const ref of references) {
+    const refPath = `references/${ref}.md`;
+    await fs.writeFile(path.join(skillDir, refPath), buildReferencePlaceholder(ref, skillId), "utf8");
+    files.push(refPath);
+  }
 
   const manifest = {
     id: skillId,
@@ -53,13 +60,11 @@ export async function createSkillScaffold(options) {
     compatibility,
     entry,
     files,
-    scripts: {},
   };
 
   await writeJson(path.join(skillDir, "skill.json"), manifest);
-  await fs.writeFile(path.join(skillDir, "agents", "openai.yaml"), buildOpenAiYaml(skillId, name, description), "utf8");
 
-  registerSkillInCatalog(catalog, toCatalogEntry(manifest, `skills/${skillId}`));
+  registerSkillInCatalog(catalog, toCatalogEntry(manifest));
   await writeJson(catalogPath, sortCatalog(catalog));
 
   return {
@@ -67,6 +72,7 @@ export async function createSkillScaffold(options) {
     skillDir,
     skillId,
     catalogPath,
+    references,
   };
 }
 
@@ -84,7 +90,7 @@ export async function createSkillRepoScaffold(options) {
 
   const catalogPath = path.join(rootDir, "catalog.json");
   await writeJson(catalogPath, {
-    formatVersion: 1,
+    formatVersion: 2,
     repo: repoId,
     ref,
     skills: [],
@@ -108,36 +114,36 @@ export async function validateSkillRepoCatalog(options) {
   const errors = [];
 
   if (!Array.isArray(catalog.skills)) {
-    errors.push("catalog.json precisa conter um array `skills`.");
+    errors.push("catalog.json must contain a `skills` array.");
   }
 
   const skillIds = Array.isArray(catalog.skills) ? catalog.skills.map((skill) => skill.id) : [];
   const sortedIds = [...skillIds].sort((left, right) => left.localeCompare(right));
   if (JSON.stringify(skillIds) !== JSON.stringify(sortedIds)) {
-    errors.push("As skills em catalog.json devem estar ordenadas por id.");
+    errors.push("Skills in catalog.json must be sorted by id.");
   }
 
-  for (const skill of catalog.skills || []) {
-    const skillDir = path.join(rootDir, skill.path || `skills/${skill.id}`);
+  for (const entry of catalog.skills || []) {
+    const skillDir = path.join(rootDir, "skills", entry.id);
     if (!(await pathExists(skillDir))) {
-      errors.push(`Pasta da skill ausente: ${skill.path || `skills/${skill.id}`}`);
+      errors.push(`Skill folder not found: skills/${entry.id}`);
       continue;
     }
 
     const manifestPath = path.join(skillDir, "skill.json");
     if (!(await pathExists(manifestPath))) {
-      errors.push(`skill.json ausente para ${skill.id}`);
+      errors.push(`skill.json missing for ${entry.id}`);
       continue;
     }
 
     const manifest = JSON.parse(await fs.readFile(manifestPath, "utf8"));
-    if (manifest.id !== skill.id) {
-      errors.push(`catalog.json e skill.json divergem para ${skill.id}`);
+    if (manifest.id !== entry.id) {
+      errors.push(`catalog.json and skill.json ids do not match for ${entry.id}`);
     }
 
-    for (const relativePath of skill.files || []) {
+    for (const relativePath of manifest.files || []) {
       if (!(await pathExists(path.join(skillDir, relativePath)))) {
-        errors.push(`Arquivo listado no catalogo nao encontrado: ${skill.id}/${relativePath}`);
+        errors.push(`File listed in skill.json not found: ${entry.id}/${relativePath}`);
       }
     }
   }
@@ -159,7 +165,7 @@ export function parseArgs(argv) {
   for (let index = 0; index < argv.length; index += 1) {
     const token = argv[index];
     if (!token.startsWith("--")) {
-      throw new Error(`Argumento invalido: ${token}`);
+      throw new Error(`Invalid argument: ${token}`);
     }
 
     const [rawKey, inlineValue] = token.slice(2).split("=", 2);
@@ -182,8 +188,35 @@ export function parseArgs(argv) {
 }
 
 async function main() {
+  const flags = parseArgs(process.argv.slice(2));
+
+  if (flags.help || !flags["skill-id"]) {
+    console.log("Usage: node init_repo_skill.js --skill-id <id> --name <name> --description <desc> [options]");
+    console.log("");
+    console.log("Options:");
+    console.log("  --skill-id <id>          Skill identifier (lowercase letters, digits, and hyphens only)");
+    console.log("  --name <name>            Human-readable skill name (default: title-cased skill-id)");
+    console.log("  --description <desc>     Skill description — include trigger patterns");
+    console.log("  --root <path>            Repository root directory (default: current directory)");
+    console.log("  --author <handle>        Author name or GitHub handle (default: lgili)");
+    console.log("  --tags <a,b,c>           Comma-separated list of tags");
+    console.log("  --references <a,b,c>     Comma-separated reference file names to scaffold");
+    console.log("  --compatibility <ids>    Comma-separated adapter ids (default: all adapters)");
+    console.log("");
+    console.log("Examples:");
+    console.log(`  node init_repo_skill.js --skill-id api-design --name "API Design" \\`);
+    console.log(`    --description "REST API design conventions. Activates when you say 'design an API'." \\`);
+    console.log(`    --references rest-conventions,versioning,error-responses \\`);
+    console.log(`    --tags api,rest,design`);
+    console.log("");
+    console.log(`  node init_repo_skill.js --skill-id git-workflow --name "Git Workflow" \\`);
+    console.log(`    --description "Branch and commit conventions." \\`);
+    console.log(`    --references branching,commit-messages`);
+    if (!flags["skill-id"]) process.exitCode = 1;
+    return;
+  }
+
   try {
-    const flags = parseArgs(process.argv.slice(2));
     const result = await createSkillScaffold({
       root: flags.root,
       skillId: flags["skill-id"],
@@ -192,11 +225,31 @@ async function main() {
       author: flags.author,
       compatibility: flags.compatibility,
       tags: flags.tags,
+      references: flags.references,
     });
 
-    console.log(`Skill criada: ${result.skillId}`);
-    console.log(`Pasta: ${result.skillDir}`);
-    console.log(`Catalogo atualizado: ${result.catalogPath}`);
+    console.log(`Skill created:   ${result.skillId}`);
+    console.log(`Folder:          ${result.skillDir}`);
+    console.log(`Catalog updated: ${result.catalogPath}`);
+    if (result.references.length > 0) {
+      console.log(`References:      ${result.references.map((r) => `references/${r}.md`).join(", ")}`);
+    }
+    console.log("");
+    console.log("Next steps:");
+    console.log(`  1. Edit skills/${result.skillId}/SKILL.md`);
+    console.log("     - Fill in Core Workflow steps with actionable instructions.");
+    console.log("     - Complete the Output Template section.");
+    console.log("     - Add trigger patterns to the description frontmatter field.");
+    let step = 2;
+    for (const ref of result.references) {
+      console.log(`  ${step}. Edit skills/${result.skillId}/references/${ref}.md — replace TODOs with real domain guidance.`);
+      step += 1;
+    }
+    console.log(`  ${step}. Add real scripts to skills/${result.skillId}/scripts/ if needed.`);
+    step += 1;
+    console.log(`  ${step}. Update catalog.json files[] if you add more tracked files.`);
+    step += 1;
+    console.log(`  ${step}. Run: node skills/create-skills/scripts/check_catalog.js --root .`);
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     console.error(`Error: ${message}`);
@@ -223,25 +276,25 @@ async function seedCreateSkillsSkill(rootDir) {
 
   const catalogPath = path.join(rootDir, "catalog.json");
   const catalog = await readCatalog(catalogPath, rootDir);
-  registerSkillInCatalog(catalog, toCatalogEntry(sourceManifest, `skills/${sourceManifest.id}`));
+  registerSkillInCatalog(catalog, toCatalogEntry(sourceManifest));
   await writeJson(catalogPath, sortCatalog(catalog));
 }
 
 function normalizeSkillId(value) {
   if (!value) {
-    throw new Error("Informe --skill-id.");
+    throw new Error("Provide --skill-id.");
   }
 
   const normalized = String(value).trim();
   if (!/^[a-z0-9-]+$/.test(normalized)) {
-    throw new Error(`skill-id invalido: "${value}". Use apenas letras minusculas, numeros e hifens.`);
+    throw new Error(`Invalid skill-id: "${value}". Use lowercase letters, digits, and hyphens only.`);
   }
   return normalized;
 }
 
 function normalizeDescription(value) {
   if (!value || !String(value).trim()) {
-    throw new Error("Informe --description.");
+    throw new Error("Provide --description.");
   }
   return String(value).trim();
 }
@@ -249,7 +302,7 @@ function normalizeDescription(value) {
 function normalizeRepositoryId(value, rootDir) {
   const candidate = value ? String(value).trim() : `${DEFAULT_CATALOG_OWNER}/${path.basename(rootDir)}`;
   if (!/^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/.test(candidate)) {
-    throw new Error(`Repositorio invalido: "${candidate}". Use owner/repo.`);
+    throw new Error(`Invalid repository id: "${candidate}". Use owner/repo format.`);
   }
   return candidate;
 }
@@ -262,19 +315,8 @@ function parseList(value, fallback) {
   return [...new Set(String(value).split(",").map((item) => item.trim()).filter(Boolean))];
 }
 
-function toCatalogEntry(manifest, skillPath) {
-  return {
-    id: manifest.id,
-    name: manifest.name,
-    version: manifest.version || "0.1.0",
-    description: manifest.description || "",
-    path: skillPath,
-    entry: manifest.entry || "SKILL.md",
-    files: manifest.files || ["SKILL.md"],
-    compatibility: manifest.compatibility || [],
-    tags: manifest.tags || [],
-    author: manifest.author || null,
-  };
+function toCatalogEntry(manifest) {
+  return { id: manifest.id };
 }
 
 function registerSkillInCatalog(catalog, entry) {
@@ -289,31 +331,94 @@ function sortCatalog(catalog) {
   };
 }
 
-function buildSkillMarkdown(skillId, name, description) {
+function buildSkillMarkdown(skillId, name, description, references) {
+  const refTableRows = references.length > 0
+    ? references.map((ref) => `| ${toTitleCase(ref)} | \`references/${ref}.md\` | When working with ${ref.replace(/-/g, " ")} |`).join("\n")
+    : `| Domain Knowledge | \`references/domain.md\` | When you need domain-specific context |`;
+
+  const scriptRow = `| \`scripts/example.js\` | Describe what the script validates or generates | \`node skills/${skillId}/scripts/example.js --help\` |`;
+
   return [
     "---",
-    `name: \"${escapeYaml(name)}\"`,
-    `description: \"${escapeYaml(description)}\"`,
-    "# autoInject: true",
-    '# activationPrompt: "Describe quando esta skill deve ser ativada automaticamente."',
+    `name: "${escapeYaml(name)}"`,
+    `description: "${escapeYaml(description)}"`,
     "---",
     "",
     `# ${name}`,
     "",
-    "Describe the concrete workflow this skill should handle.",
+    description,
     "",
-    "## Workflow",
+    "## Core Workflow",
     "",
-    "1. Inspect the task and collect the required context.",
-    "2. Use scripts or references only when they materially help.",
-    "3. Produce the requested output with the repository conventions.",
+    "1. **Understand the request** — Read the task and identify exactly what the user needs.",
+    "2. **Gather context** — Load the relevant reference files from the Reference Guide below.",
+    "3. **Apply constraints** — Follow the MUST DO / MUST NOT DO rules before generating output.",
+    "4. **Produce the output** — Use the Output Template as the structure for your response.",
+    "5. **Validate** — Run any bundled scripts that verify correctness before returning.",
     "",
-    "## Resources",
+    "## Reference Guide",
     "",
-    "- Add `scripts/` files only for deterministic or repeated steps.",
-    "- Add `references/` only when the skill needs extra domain guidance.",
-    "- If the skill needs auto-inject, uncomment `autoInject` and fill `activationPrompt` in the frontmatter.",
-    `- Always ensure the root catalog keeps an entry for \`${skillId}\` when this skill is added to a repository.`,
+    "| Topic | Reference | When to load |",
+    "|-------|-----------|--------------|",
+    refTableRows,
+    "",
+    "## Bundled Scripts",
+    "",
+    "| Script | Purpose | Usage |",
+    "|--------|---------|-------|",
+    scriptRow,
+    "",
+    "## Constraints",
+    "",
+    "**MUST DO**",
+    "- Follow the conventions documented in the reference files.",
+    "- Explain your reasoning when a rule conflict arises.",
+    "- Produce output that matches the Output Template structure below.",
+    "",
+    "**MUST NOT DO**",
+    "- Do not invent conventions not documented in the references.",
+    "- Do not skip validation steps when a script is available.",
+    "- Do not produce output that contradicts the active constraints.",
+    "",
+    "## Output Template",
+    "",
+    "```",
+    "<!-- Describe the expected output structure here. -->",
+    "<!-- For example: a commit message, a code diff, a code block with explanation, etc. -->",
+    "```",
+    "",
+    "## References",
+    "",
+    "- Add authoritative external links here (specs, RFCs, official documentation).",
+    "",
+  ].join("\n");
+}
+
+function buildReferencePlaceholder(ref, skillId) {
+  const title = toTitleCase(ref);
+  return [
+    `# ${title}`,
+    "",
+    `> Reference for: ${skillId}`,
+    `> Load when: Working with ${ref.replace(/-/g, " ")}`,
+    "",
+    "## Overview",
+    "",
+    "TODO: Add domain-specific guidance here.",
+    "",
+    "## Key Concepts",
+    "",
+    "TODO: Document key concepts, patterns, and conventions.",
+    "",
+    "## Examples",
+    "",
+    "```",
+    "TODO: Add code examples.",
+    "```",
+    "",
+    "## Anti-Patterns",
+    "",
+    "TODO: Document common mistakes to avoid.",
     "",
   ].join("\n");
 }
@@ -322,9 +427,9 @@ function buildOpenAiYaml(skillId, name, description) {
   const shortDescription = description.length > 64 ? `${description.slice(0, 61)}...` : description;
   return [
     "interface:",
-    `  display_name: \"${escapeYaml(name)}\"`,
-    `  short_description: \"${escapeYaml(shortDescription)}\"`,
-    `  default_prompt: \"Use $${skillId} to help me with this task.\"`,
+    `  display_name: "${escapeYaml(name)}"`,
+    `  short_description: "${escapeYaml(shortDescription)}"`,
+    `  default_prompt: "Use $${skillId} to help me with this task."`,
     "",
     "policy:",
     "  allow_implicit_invocation: true",
@@ -340,8 +445,8 @@ function buildRepositoryReadme(repoId, repoName, description) {
     "",
     "## Layout",
     "",
-    "- `catalog.json`: root catalog consumed by Skillex.",
-    "- `skills/`: first-party skills published by this repository.",
+    "- `catalog.json` — root catalog consumed by Skillex.",
+    "- `skills/` — first-party skills published by this repository.",
     "",
     "## Included Skill",
     "",
@@ -352,7 +457,10 @@ function buildRepositoryReadme(repoId, repoName, description) {
     "Create a new skill in this repository:",
     "",
     "```bash",
-    "node skills/create-skills/scripts/init_repo_skill.js --root . --skill-id my-skill --name \"My Skill\" --description \"Describe what this skill does.\"",
+    `node skills/create-skills/scripts/init_repo_skill.js \\`,
+    `  --skill-id my-skill --name "My Skill" \\`,
+    `  --description "Describe what this skill does. Activates when you say '...'." \\`,
+    "  --references topic-one,topic-two",
     "```",
     "",
     "Validate the catalog:",
@@ -399,7 +507,7 @@ async function resolveCreateSkillsSourceDir() {
     return WORKSPACE_CREATE_SKILLS_DIR;
   }
 
-  throw new Error("Nao foi possivel localizar a skill create-skills para copiar o scaffold.");
+  throw new Error("Could not locate create-skills skill for seeding.");
 }
 
 async function assertDirectoryIsEmpty(targetDir) {
@@ -410,7 +518,7 @@ async function assertDirectoryIsEmpty(targetDir) {
 
   const entries = await fs.readdir(targetDir);
   if (entries.length > 0) {
-    throw new Error(`A pasta de destino precisa estar vazia: ${targetDir}`);
+    throw new Error(`Target directory must be empty: ${targetDir}`);
   }
 }
 

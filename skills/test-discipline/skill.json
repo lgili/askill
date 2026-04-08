@@ -1,0 +1,32 @@
+{
+  "id": "test-discipline",
+  "name": "Test Discipline",
+  "version": "1.0.0",
+  "description": "Testing habits: behavior-driven test structure, edge case coverage, smart mocking, and coverage policy for Vitest, Jest, pytest, and Node.js test runner.",
+  "author": "lgili",
+  "tags": [
+    "testing",
+    "tdd",
+    "coverage",
+    "vitest",
+    "jest",
+    "pytest"
+  ],
+  "compatibility": [
+    "codex",
+    "copilot",
+    "cline",
+    "cursor",
+    "claude",
+    "gemini",
+    "windsurf"
+  ],
+  "entry": "SKILL.md",
+  "files": [
+    "SKILL.md",
+    "references/testing-patterns.md",
+    "references/mocking-guide.md",
+    "references/coverage-policy.md",
+    "scripts/scaffold_test.js"
+  ]
+}

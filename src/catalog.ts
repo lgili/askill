@@ -130,7 +130,7 @@ export async function loadCatalog(options: CatalogSourceInput = {}): Promise<Cat
 
     const catalogUrl = source.catalogUrl ?? buildRawGitHubUrl(source.repo, source.ref, source.catalogPath);
     const remoteCatalog = await fetchOptionalJson<RemoteCatalog>(catalogUrl);
-    const result = remoteCatalog ? normalizeCatalog(remoteCatalog, source) : await loadCatalogFromTree(source);
+    const result = remoteCatalog ? await normalizeCatalog(remoteCatalog, source) : await loadCatalogFromTree(source);
 
     // Write to cache (fire-and-forget; never fail the caller)
     if (cacheDir) {
@@ -356,17 +356,43 @@ function collectFilesUnderPath(treeFiles: GitTreeItem[], skillPath: string): str
     .map((item) => assertSafeRelativePath(item.path.slice(skillPath.length + 1)));
 }
 
-function normalizeCatalog(remoteCatalog: RemoteCatalog, source: CatalogSource): CatalogData {
+async function normalizeCatalog(remoteCatalog: RemoteCatalog, source: CatalogSource): Promise<CatalogData> {
   const remoteSkills = Array.isArray(remoteCatalog.skills) ? remoteCatalog.skills : [];
   if (remoteSkills.length === 0) {
     throw new CatalogError("catalog.json found but the skills array is empty.", "CATALOG_EMPTY");
+  }
+
+  // v2 format: slim index entries (only `id`). Fetch each skill.json for full metadata.
+  const isV2 =
+    Number(remoteCatalog.formatVersion) >= 2 ||
+    remoteSkills.every((s) => Object.keys(s).length === 1 && "id" in s);
+
+  let skills: SkillManifest[];
+
+  if (isV2) {
+    skills = await Promise.all(
+      remoteSkills.map(async (entry) => {
+        const id = entry.id;
+        if (!id) {
+          throw new CatalogError("Every skill must have an id field.", "MALFORMED_SKILL");
+        }
+        const skillPath = `${source.skillsDir}/${id}`;
+        const manifestUrl = buildRawGitHubUrl(source.repo, source.ref, `${skillPath}/skill.json`);
+        const manifest = await fetchJson<Partial<SkillManifest>>(manifestUrl, {
+          headers: { Accept: "application/json" },
+        });
+        return normalizeSkill({ ...manifest, id, path: skillPath }, source);
+      }),
+    );
+  } else {
+    skills = remoteSkills.map((skill) => normalizeSkill(skill, source));
   }
 
   return {
     formatVersion: Number(remoteCatalog.formatVersion || 1),
     repo: remoteCatalog.repo || source.repo,
     ref: remoteCatalog.ref || source.ref,
-    skills: sortSkills(remoteSkills.map((skill) => normalizeSkill(skill, source))),
+    skills: sortSkills(skills),
   };
 }
 
