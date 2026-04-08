@@ -1,0 +1,215 @@
+#!/usr/bin/env node
+/**
+ * scaffold_test.js
+ * Generate a consistent test file template for a given source file.
+ *
+ * Usage:
+ *   node scaffold_test.js --file src/my-module.ts
+ *   node scaffold_test.js --file src/my-module.ts --type integration
+ *   node scaffold_test.js --file src/my-module.ts --out test/custom-name.test.ts
+ *   node scaffold_test.js --file src/my-module.ts --framework jest
+ *
+ * Exit codes:
+ *   0 — file created
+ *   1 — error or usage problem
+ */
+
+import { writeFileSync, existsSync, readFileSync } from "node:fs";
+import { resolve, basename, dirname, join, extname, relative } from "node:path";
+import { mkdirSync } from "node:fs";
+
+// ---------------------------------------------------------------------------
+// Argument parsing
+// ---------------------------------------------------------------------------
+
+const args = process.argv.slice(2);
+
+function getArg(flag) {
+  const i = args.indexOf(flag);
+  return i !== -1 ? args[i + 1] : undefined;
+}
+
+const sourceArg = getArg("--file");
+const typeArg = getArg("--type") ?? "unit";
+const frameworkArg = getArg("--framework");
+const outArg = getArg("--out");
+
+if (!sourceArg) {
+  console.error(
+    "Usage: node scaffold_test.js --file <source-file> [options]\n\n" +
+    "Options:\n" +
+    "  --file <path>          Source file to generate tests for (required)\n" +
+    "  --type unit|integration  Test type (default: unit)\n" +
+    "  --framework vitest|jest|node  Test runner (default: auto-detected)\n" +
+    "  --out <path>           Output path (default: test/<module>.test.<ext>)",
+  );
+  process.exit(1);
+}
+
+const sourceFile = resolve(sourceArg);
+const sourceExt = extname(sourceFile); // .ts, .js, .tsx, .jsx
+const moduleName = basename(sourceFile, sourceExt);
+const isTypeScript = sourceExt === ".ts" || sourceExt === ".tsx";
+const testExt = isTypeScript ? ".ts" : ".js";
+
+// ---------------------------------------------------------------------------
+// Framework detection
+// ---------------------------------------------------------------------------
+
+function detectFramework() {
+  if (frameworkArg) return frameworkArg;
+  try {
+    const pkg = JSON.parse(readFileSync(resolve("package.json"), "utf-8"));
+    const deps = { ...pkg.dependencies, ...pkg.devDependencies };
+    if (deps["vitest"]) return "vitest";
+    if (deps["jest"] || deps["@jest/core"] || deps["ts-jest"]) return "jest";
+  } catch { /* no package.json */ }
+  return "node";
+}
+
+const framework = detectFramework();
+
+// ---------------------------------------------------------------------------
+// Output path
+// ---------------------------------------------------------------------------
+
+const defaultOutDir = resolve("test");
+const defaultOutFile = join(defaultOutDir, `${moduleName}.test${testExt}`);
+const outFile = outArg ? resolve(outArg) : defaultOutFile;
+
+if (existsSync(outFile)) {
+  console.error(`Test file already exists: ${outFile}`);
+  console.error('Delete it manually or use --out to specify a different path.');
+  process.exit(1);
+}
+
+// ---------------------------------------------------------------------------
+// Template generation
+// ---------------------------------------------------------------------------
+
+function buildImportBlock() {
+  const relPath = relative(dirname(outFile), sourceFile)
+    .replace(/\\/g, "/")
+    .replace(/\.(ts|tsx)$/, ".js"); // NodeNext-style
+
+  const importAlias = moduleName
+    .split(/[-_]/)
+    .map((part, i) => (i === 0 ? part : part[0]?.toUpperCase() + part.slice(1)))
+    .join("");
+
+  if (framework === "node") {
+    return (
+      `import { describe, it, before, after } from "node:test";\n` +
+      `import assert from "node:assert/strict";\n` +
+      `import { ${importAlias} } from "${relPath}";`
+    );
+  }
+  if (framework === "vitest") {
+    return (
+      `import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";\n` +
+      `import { ${importAlias} } from "${relPath}";`
+    );
+  }
+  // jest
+  return (
+    `import { describe, it, expect, beforeEach, afterEach, jest } from "@jest/globals";\n` +
+    `import { ${importAlias} } from "${relPath}";`
+  );
+}
+
+function buildAssert(expression, expected) {
+  if (framework === "node") return `assert.deepStrictEqual(${expression}, ${expected});`;
+  return `expect(${expression}).toEqual(${expected});`;
+}
+
+function buildThrowsAssert(call) {
+  if (framework === "node") return `assert.throws(() => ${call});`;
+  return `expect(() => ${call}).toThrow();`;
+}
+
+function buildAsyncThrowsAssert(call) {
+  if (framework === "node") return `await assert.rejects(${call});`;
+  return `await expect(${call}).rejects.toThrow();`;
+}
+
+const importAlias = moduleName
+  .split(/[-_]/)
+  .map((part, i) => (i === 0 ? part : part[0]?.toUpperCase() + part.slice(1)))
+  .join("");
+
+const isIntegration = typeArg === "integration";
+
+const template = `${buildImportBlock()}
+
+// ---------------------------------------------------------------------------
+// ${moduleName} — ${typeArg} tests
+// Generated by test-discipline/scripts/scaffold_test.js
+// ---------------------------------------------------------------------------
+
+describe("${moduleName}", () => {
+  ${isIntegration ? "// beforeEach(async () => { /* set up real dependencies */ });\n  // afterEach(async () => { /* clean up */ });" : "// beforeEach(() => { /* set up shared fixtures */ });"}
+
+  // -------------------------------------------------------------------------
+  // Happy path
+  // -------------------------------------------------------------------------
+
+  describe("happy path", () => {
+    it("returns the expected result for valid input", ${isIntegration ? "async " : ""}() => {
+      // Arrange
+      const input = undefined; // TODO: provide valid input
+
+      // Act
+      const result = ${isIntegration ? "await " : ""}${importAlias}(input);
+
+      // Assert
+      ${buildAssert("result", "undefined")} // TODO: replace with real expectation
+    });
+  });
+
+  // -------------------------------------------------------------------------
+  // Edge cases
+  // -------------------------------------------------------------------------
+
+  describe("edge cases", () => {
+    it("handles empty input gracefully", ${isIntegration ? "async " : ""}() => {
+      // TODO: implement — test with null, undefined, empty string, or empty array
+    });
+
+    it("handles boundary values correctly", ${isIntegration ? "async " : ""}() => {
+      // TODO: implement — test with min/max values, zero, or other boundaries
+    });
+  });
+
+  // -------------------------------------------------------------------------
+  // Error paths
+  // -------------------------------------------------------------------------
+
+  describe("error paths", () => {
+    it("throws on invalid input", ${isIntegration ? "async " : ""}() => {
+      // TODO: verify the error type and key message/code fields
+      ${isIntegration ? buildAsyncThrowsAssert(`${importAlias}(null)`) : buildThrowsAssert(`${importAlias}(null)`)}
+    });
+  });
+});
+`;
+
+// ---------------------------------------------------------------------------
+// Write file
+// ---------------------------------------------------------------------------
+
+try {
+  mkdirSync(dirname(outFile), { recursive: true });
+  writeFileSync(outFile, template, "utf-8");
+} catch (err) {
+  console.error(`Error writing test file: ${err.message}`);
+  process.exit(1);
+}
+
+console.log(`✓  Test file created: ${outFile}`);
+console.log(`   Framework  : ${framework}`);
+console.log(`   Test type  : ${typeArg}`);
+console.log(`   Source     : ${sourceFile}`);
+console.log("\nNext steps:");
+console.log("  1. Fill in the TODO sections with real inputs and expectations.");
+console.log("  2. Run your test suite to confirm the scaffolded file is picked up.");
+console.log("  3. Add more test cases for additional behaviors and edge cases.");
