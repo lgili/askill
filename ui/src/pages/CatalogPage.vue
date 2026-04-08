@@ -53,7 +53,7 @@ const visibleSkills = computed(() => {
       <!-- Stats row -->
       <div class="catalog-overview">
         <article class="overview-card">
-          <span>Visíveis</span>
+          <span>Visible</span>
           <strong>{{ visibleSkills.length }}</strong>
         </article>
         <article class="overview-card">

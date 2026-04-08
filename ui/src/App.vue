@@ -148,12 +148,12 @@ onMounted(async () => {
           </div>
           <p v-if="(dashboard?.sources.length ?? 0) === 0"
              style="font-size:11px;color:var(--text-dim);padding:2px 0">
-            Nenhuma source.
+            No sources.
           </p>
         </div>
 
         <!-- sync history -->
-        <p class="nav-section-label" style="font-size:9px;margin-bottom:4px;color:var(--text-dim)">Histórico sync</p>
+        <p class="nav-section-label" style="font-size:9px;margin-bottom:4px;color:var(--text-dim)">Sync history</p>
         <div style="padding:0 10px 8px;display:grid;gap:4px;">
           <div v-for="sync in recentSyncTargets.slice(0,3)" :key="`${sync.adapter}-${sync.syncedAt}`"
                style="padding:6px 8px;border-radius:8px;background:rgba(39,39,42,0.4);border:1px solid rgba(63,63,70,0.3);">
@@ -282,7 +282,7 @@ onMounted(async () => {
             </svg>
           </div>
           <div class="toast-text">
-            <strong>{{ store.state.toast.tone === "error" ? "Erro" : "Concluído" }}</strong>
+            <strong>{{ store.state.toast.tone === "error" ? "Error" : "Done" }}</strong>
             <span>{{ store.state.toast.message }}</span>
           </div>
         </div>

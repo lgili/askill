@@ -28,9 +28,9 @@ onMounted(() => void loadCurrentSkill());
           <svg width="13" height="13" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
           </svg>
-          Catálogo
+          Catalog
         </button>
-        <p class="section-label">Detalhe da skill</p>
+        <p class="section-label">Skill detail</p>
       </div>
 
       <div v-if="detail" class="detail-hero">
@@ -95,13 +95,13 @@ onMounted(() => void loadCurrentSkill());
             <strong>{{ detail.skill.source.label || detail.skill.source.repo }}</strong>
           </article>
           <article class="metadata-card">
-            <span>Versão</span>
+            <span>Version</span>
             <strong style="font-family:monospace;">v{{ detail.skill.version }}</strong>
           </article>
           <article class="metadata-card">
-            <span>Instalada</span>
+            <span>Installed</span>
             <strong :style="detail.skill.installed ? 'color:var(--accent)' : 'color:var(--text-muted)'">
-              {{ detail.skill.installed ? "✓ Sim" : "Não" }}
+              {{ detail.skill.installed ? "✓ Yes" : "No" }}
             </strong>
           </article>
         </div>
@@ -116,7 +116,7 @@ onMounted(() => void loadCurrentSkill());
             </div>
           </div>
           <div>
-            <p class="section-label" style="margin:0 0 8px;display:block;">Compatibilidade</p>
+            <p class="section-label" style="margin:0 0 8px;display:block;">Compatibility</p>
             <div class="chip-row">
               <span v-for="adapter in detail.skill.compatibility" :key="adapter" class="chip chip-accent">
                 {{ adapter }}
@@ -131,14 +131,14 @@ onMounted(() => void loadCurrentSkill());
       <div class="panel">
         <div class="panel-head">
           <div class="panel-head-title">
-            <p class="eyebrow">Instruções</p>
+            <p class="eyebrow">Instructions</p>
             <h2>SKILL.md</h2>
-            <p>Conteúdo renderizado pelo backend.</p>
+            <p>Content rendered by the backend.</p>
           </div>
         </div>
 
         <div v-if="detail.instructionsError" class="error-card" style="margin:0 20px 20px;">
-          <strong>Instruções indisponíveis</strong>
+          <strong>Instructions unavailable</strong>
           <p>{{ detail.instructionsError }}</p>
         </div>
 
