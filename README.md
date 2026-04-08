@@ -47,7 +47,7 @@ npx skillex@latest install create-skills
 npx skillex@latest sync
 ```
 
-> **Important:** `install` downloads skill files locally. `sync` is what actually writes the skill instructions into your agent's configuration file (e.g. `CLAUDE.md`, `AGENTS.md`, `.cursorrules`). **You must run `sync` after every install or update for your agent to pick up the changes.** Use `--auto-sync` at `init` time to have this happen automatically.
+> **Important:** `install` downloads skill files locally. `sync` is what actually writes the skill instructions into your agent's configuration file (e.g. `.claude/skills/skillex-skills.md`, `.codex/skills/skillex-skills.md`, `.github/copilot-instructions.md`). **You must run `sync` after every install or update for your agent to pick up the changes.** Use `--auto-sync` at `init` time to have this happen automatically.
 
 After `init`, Skillex saves the configured source list in the local lockfile. New workspaces start with `lgili/skillex@main` by default, and you can add more sources later with `skillex source add`.
 
@@ -196,7 +196,7 @@ skillex rm git-master code-review
 
 ### `sync`
 
-Write all installed skills into the active adapter's config file (e.g. `CLAUDE.md`, `AGENTS.md`, `.cursorrules`). **This is the step that makes skills visible to your AI agent.** Run it after every `install`, `update`, or `remove`.
+Write all installed skills into the active adapter's config file (e.g. `.claude/skills/skillex-skills.md`, `.codex/skills/skillex-skills.md`, `.github/copilot-instructions.md`). **This is the step that makes skills visible to your AI agent.** Run it after every `install`, `update`, or `remove`.
 
 ```bash
 # Sync to the detected adapter
@@ -223,10 +223,10 @@ skillex sync --mode copy
 `sync` writes to one adapter at a time. If you use more than one AI agent in the same folder (e.g. Claude and Codex), run `sync` once for each:
 
 ```bash
-# Write skills into CLAUDE.md
+# Write skills into .claude/skills/skillex-skills.md
 skillex sync --adapter claude
 
-# Write skills into AGENTS.md (Codex)
+# Write skills into .codex/skills/skillex-skills.md
 skillex sync --adapter codex
 ```
 
@@ -365,15 +365,15 @@ Skillex auto-detects the AI agent you use by looking for known marker files in y
 | `copilot` | GitHub Copilot | `.github/copilot-instructions.md` | `.github/copilot-instructions.md` |
 | `cline` | Cline / Roo Code | `.cline/`, `.roo/`, `.clinerules` | `.clinerules/skillex-skills.md` |
 | `cursor` | Cursor | `.cursor/`, `.cursorrules` | `.cursor/rules/skillex-skills.mdc` |
-| `claude` | Claude Code | `CLAUDE.md`, `.claude/` | `CLAUDE.md` |
-| `gemini` | Gemini CLI | `GEMINI.md`, `.gemini/` | `GEMINI.md` |
+| `claude` | Claude Code | `CLAUDE.md`, `.claude/` | `.claude/skills/skillex-skills.md` |
+| `gemini` | Gemini CLI | `GEMINI.md`, `.gemini/` | `.gemini/skills/skillex-skills.md` |
 | `windsurf` | Windsurf | `.windsurf/`, `.windsurf/rules/` | `.windsurf/rules/skillex-skills.md` |
 
-**Shared-file adapters** (`copilot`, `claude`, `gemini`) use a **managed block** — Skillex writes between `<!-- SKILLEX:START -->` and `<!-- SKILLEX:END -->` markers while preserving everything else in the file.
+**Shared-file adapter** (`copilot`) uses a **managed block** — Skillex writes between `<!-- SKILLEX:START -->` and `<!-- SKILLEX:END -->` markers inside `.github/copilot-instructions.md`, preserving everything else in the file.
 
-**Dedicated-file adapters** (`codex`, `cline`, `cursor`, `windsurf`) generate a file in `.agent-skills/generated/` and create a relative symlink at the adapter's target path (e.g. `.codex/skills/skillex-skills.md`). Use `--mode copy` to write directly instead. Your `AGENTS.md` is left untouched.
+**Dedicated-file adapters** (`codex`, `cline`, `claude`, `cursor`, `gemini`, `windsurf`) each generate a file in `~/.skillex/generated/<adapter>/` and create an absolute symlink at the adapter's target path (e.g. `.claude/skills/skillex-skills.md`). Use `--mode copy` to write directly instead.
 
-> **Migrating from a previous version?** If you had skill content injected into `AGENTS.md` by an older version of Skillex, remove the block between `<!-- SKILLEX:START -->` and `<!-- SKILLEX:END -->` manually and run `skillex sync` to write to the new target.
+> **Migrating from a previous version?** If you had skill content injected into `CLAUDE.md`, `GEMINI.md`, or `AGENTS.md` by an older version of Skillex, those legacy files are cleaned up automatically on the next `sync`. You can also remove the block manually.
 
 Compatibility aliases are normalized automatically: `claude-code` → `claude`, `github-copilot` → `copilot`, `roo-code` → `cline`, `gemini-cli` → `gemini`.
 

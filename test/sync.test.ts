@@ -116,14 +116,14 @@ async function isSymlink(targetPath: string): Promise<boolean> {
   }
 }
 
-test("syncInstalledSkills preserva conteudo manual e injeta auto-inject em CLAUDE.md", async (t: TestContext) => {
-  const cwd = await fs.mkdtemp(path.join(os.tmpdir(), "skillex-sync-claude-"));
+test("syncInstalledSkills preserva conteudo manual e injeta auto-inject em copilot-instructions", async (t: TestContext) => {
+  const cwd = await fs.mkdtemp(path.join(os.tmpdir(), "skillex-sync-copilot-"));
   t.after(async () => {
     await fs.rm(cwd, { recursive: true, force: true });
   });
 
   await writeText(
-    path.join(cwd, "CLAUDE.md"),
+    path.join(cwd, ".github", "copilot-instructions.md"),
     [
       "# Manual",
       "",
@@ -138,17 +138,17 @@ test("syncInstalledSkills preserva conteudo manual e injeta auto-inject em CLAUD
     ].join("\n"),
   );
 
-  await setupInstalledSkill(cwd, { adapter: "claude", autoInject: true });
+  await setupInstalledSkill(cwd, { adapter: "copilot", autoInject: true });
   const result = await syncInstalledSkills({
     cwd,
     now: () => "2026-04-06T00:20:00.000Z",
   });
 
-  assert.equal(result.sync.adapter, "claude");
-  assert.equal(result.sync.targetPath, "CLAUDE.md");
+  assert.equal(result.sync.adapter, "copilot");
+  assert.equal(result.sync.targetPath, ".github/copilot-instructions.md");
   assert.equal(result.syncMode, "copy");
 
-  const content = await fs.readFile(path.join(cwd, "CLAUDE.md"), "utf8");
+  const content = await fs.readFile(path.join(cwd, ".github", "copilot-instructions.md"), "utf8");
   assert.match(content, /# Manual/);
   assert.match(content, /Depois do bloco/);
   assert.match(content, /## Skillex Managed Skills/);
@@ -163,7 +163,7 @@ test("syncInstalledSkills remove bloco auto-inject quando nao ha skills elegivei
     await fs.rm(cwd, { recursive: true, force: true });
   });
 
-  await setupInstalledSkill(cwd, { adapter: "claude", autoInject: true });
+  await setupInstalledSkill(cwd, { adapter: "copilot", autoInject: true });
   await syncInstalledSkills({
     cwd,
     now: () => "2026-04-06T00:20:00.000Z",
@@ -179,7 +179,7 @@ test("syncInstalledSkills remove bloco auto-inject quando nao ha skills elegivei
   });
 
   assert.equal(result.syncMode, "copy");
-  const content = await fs.readFile(path.join(cwd, "CLAUDE.md"), "utf8");
+  const content = await fs.readFile(path.join(cwd, ".github", "copilot-instructions.md"), "utf8");
   assert.doesNotMatch(content, /SKILLEX:AUTO-INJECT/);
 });
 
@@ -292,7 +292,7 @@ test("auto-sync roda apos install, update e remove quando habilitado", async (t:
   await initProject({
     cwd,
     repo: "example/skills",
-    adapter: "claude",
+    adapter: "copilot",
     autoSync: true,
     now: () => "2026-04-06T00:00:00.000Z",
   });
@@ -305,9 +305,9 @@ test("auto-sync roda apos install, update e remove quando habilitado", async (t:
   });
 
   assert.ok(installResult.autoSync);
-  assert.equal(installResult.autoSync.sync.adapter, "claude");
+  assert.equal(installResult.autoSync.sync.adapter, "copilot");
   assert.equal(installResult.autoSync.syncMode, "copy");
-  let content = await fs.readFile(path.join(cwd, "CLAUDE.md"), "utf8");
+  let content = await fs.readFile(path.join(cwd, ".github", "copilot-instructions.md"), "utf8");
   assert.match(content, /git-master@1\.0\.0/);
 
   const updateResult = await updateInstalledSkills(["git-master"], {
@@ -321,8 +321,8 @@ test("auto-sync roda apos install, update e remove quando habilitado", async (t:
   });
 
   assert.ok(updateResult.autoSync);
-  assert.equal(updateResult.autoSync.sync.adapter, "claude");
-  content = await fs.readFile(path.join(cwd, "CLAUDE.md"), "utf8");
+  assert.equal(updateResult.autoSync.sync.adapter, "copilot");
+  content = await fs.readFile(path.join(cwd, ".github", "copilot-instructions.md"), "utf8");
   assert.match(content, /git-master@2\.0\.0/);
 
   const removeResult = await removeSkills(["git-master"], {
@@ -331,7 +331,7 @@ test("auto-sync roda apos install, update e remove quando habilitado", async (t:
   });
 
   assert.ok(removeResult.autoSync);
-  assert.equal(removeResult.autoSync.sync.adapter, "claude");
-  content = await fs.readFile(path.join(cwd, "CLAUDE.md"), "utf8");
+  assert.equal(removeResult.autoSync.sync.adapter, "copilot");
+  content = await fs.readFile(path.join(cwd, ".github", "copilot-instructions.md"), "utf8");
   assert.match(content, /Nenhuma skill instalada no momento\./);
 });

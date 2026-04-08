@@ -54,8 +54,9 @@ const ADAPTERS: AdapterConfig[] = [
       { path: "CLAUDE.md", weight: 16 },
       { path: ".claude", weight: 18 },
     ],
-    syncTarget: "CLAUDE.md",
-    syncMode: "managed-block",
+    syncTarget: ".claude/skills/skillex-skills.md",
+    legacySyncTargets: ["CLAUDE.md"],
+    syncMode: "managed-file",
   },
   {
     id: "gemini",
@@ -64,8 +65,9 @@ const ADAPTERS: AdapterConfig[] = [
       { path: "GEMINI.md", weight: 16 },
       { path: ".gemini", weight: 18 },
     ],
-    syncTarget: "GEMINI.md",
-    syncMode: "managed-block",
+    syncTarget: ".gemini/skills/skillex-skills.md",
+    legacySyncTargets: ["GEMINI.md"],
+    syncMode: "managed-file",
   },
   {
     id: "windsurf",
