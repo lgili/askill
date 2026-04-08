@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.1] - 2026-04-07
+
+### Changed
+- Skills and generated symlink sources are now stored in `~/.skillex/` (user-level) instead of `<project>/.agent-skills/`, so a single install is shared across all workspaces and symlinks always resolve correctly
+- `claude` adapter: switched from managed-block in `CLAUDE.md` to a dedicated file at `.claude/skills/skillex-skills.md`; old `CLAUDE.md` block cleaned up automatically on next `sync`
+- `gemini` adapter: switched from managed-block in `GEMINI.md` to a dedicated file at `.gemini/skills/skillex-skills.md`; old `GEMINI.md` block cleaned up automatically on next `sync`
+- `codex` adapter: switched from managed-block in `AGENTS.md` to a dedicated file at `.codex/skills/skillex-skills.md` (introduced in this cycle)
+- Symlinks are now absolute paths instead of relative, ensuring they work regardless of project depth
+- `copilot` is now the only adapter that uses managed-block injection
+- `--agent-skills-dir` flag still overrides to a project-local directory when isolation is needed
+
 ## [0.2.0] - 2026-04-07
 
 ### Added
