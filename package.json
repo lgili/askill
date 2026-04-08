@@ -17,6 +17,7 @@
   "files": [
     "bin",
     "dist",
+    "dist-ui",
     "README.md",
     "CHANGELOG.md"
   ],
@@ -63,11 +64,14 @@
     "skillex": "bin/skillex.js"
   },
   "scripts": {
-    "build": "tsc -p tsconfig.json",
+    "build": "npm run build:ui && tsc -p tsconfig.json",
+    "build:ui": "vite build --config ui/vite.config.ts",
     "build:test": "tsc -p tsconfig.test.json",
-    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "typecheck": "npm run typecheck:ui && tsc --noEmit -p tsconfig.json",
+    "typecheck:ui": "vue-tsc --noEmit -p ui/tsconfig.app.json",
+    "dev:ui": "vite --config ui/vite.config.ts",
     "start": "npm run build && node ./bin/skillex.js",
-    "test": "npm run build:test && node --test .test-dist/test/*.test.js",
+    "test": "npm run build:ui && npm run build:test && node --test .test-dist/test/*.test.js",
     "prepublishOnly": "npm run build && npm test"
   },
   "engines": {
@@ -86,8 +90,14 @@
     "@inquirer/prompts": "^7.9.0"
   },
   "devDependencies": {
+    "@vitejs/plugin-vue": "^5.2.1",
     "@types/node": "^24.6.0",
-    "typescript": "^5.9.3"
+    "@vue/compiler-sfc": "^3.5.13",
+    "typescript": "^5.9.3",
+    "vite": "^6.3.5",
+    "vue": "^3.5.13",
+    "vue-router": "^4.5.1",
+    "vue-tsc": "^2.2.8"
   },
   "license": "MIT"
 }

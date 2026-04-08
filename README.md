@@ -71,6 +71,23 @@ npm install -D skillex
 npx skillex <command>
 ```
 
+### Local Web UI development
+
+When working on the repository itself, the browser UI is a standalone Vue 3 + Vite frontend under [`ui/`](/Users/lgili/Documents/01%20-%20Codes/01%20-%20Github/Skill/ui). The CLI serves the built assets from [`dist-ui/`](/Users/lgili/Documents/01%20-%20Codes/01%20-%20Github/Skill/dist-ui) and keeps all install/remove/update/sync logic in the local TypeScript backend.
+
+```bash
+npm install
+npm run build:ui
+npm run build
+node ./bin/skillex.js ui
+```
+
+For frontend-only iteration:
+
+```bash
+npm run dev:ui
+```
+
 ---
 
 ## Commands
@@ -259,12 +276,25 @@ skillex run git-master:cleanup --yes   # skip confirmation
 
 ---
 
+### Default terminal browser
+
+Running `skillex` with no subcommand now opens the interactive terminal browser by default.
+
+```bash
+skillex
+skillex browse
+skillex tui
+```
+
+---
+
 ### `ui`
 
-Open an interactive terminal UI to browse and install skills.
+Open the local Web UI in your browser.
 
 ```bash
 skillex ui
+skillex ui --global
 ```
 
 ---

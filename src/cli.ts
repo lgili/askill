@@ -2,7 +2,6 @@ import * as path from "node:path";
 import { listAdapters } from "./adapters.js";
 import {
   computeCatalogCacheKey,
-  loadCatalog,
   readCatalogCache,
   searchCatalogSkills,
 } from "./catalog.js";
@@ -24,6 +23,7 @@ import * as output from "./output.js";
 import { setVerbose } from "./output.js";
 import { parseSkillCommandReference, runSkillScript } from "./runner.js";
 import { runInteractiveUi } from "./ui.js";
+import { startWebUiServer } from "./web-ui.js";
 import type { InstallScope, ParsedArgs, ProjectOptions, SearchOptions, SyncWriteMode } from "./types.js";
 import { CliError } from "./types.js";
 import { VALID_CONFIG_KEYS, readUserConfig, writeUserConfig } from "./user-config.js";
@@ -155,7 +155,9 @@ Options:
 Example:
   skillex run git-master:cleanup --yes`,
 
-  ui: `Usage: skillex ui [options]
+  browse: `Usage: skillex browse [options]
+         skillex tui [options]
+         skillex [options]
 
 Open the interactive terminal browser to browse and install skills.
 
@@ -164,7 +166,22 @@ Options:
   --no-cache            Bypass local catalog cache
 
 Example:
-  skillex ui`,
+  skillex
+  skillex browse`,
+
+  ui: `Usage: skillex ui [options]
+
+Open the local Web UI in your browser.
+
+Options:
+  --repo <owner/repo>   GitHub repository
+  --scope <scope>       local or global (default: local)
+  --global              Shortcut for --scope global
+  --no-cache            Bypass local catalog cache
+
+Example:
+  skillex ui
+  skillex ui --global`,
 
   status: `Usage: skillex status [options]
 
@@ -247,9 +264,16 @@ export async function main(argv: string[]): Promise<void> {
     process.env.GITHUB_TOKEN = userConfig.githubToken;
   }
 
+  const resolvedCommand = resolveCommandRoute(command);
+
+  if (flags.help === true && !command) {
+    printHelp();
+    return;
+  }
+
   // Per-command --help
-  if (flags.help === true && command && command !== "help") {
-    const helpText = COMMAND_HELP[command];
+  if (flags.help === true && resolvedCommand && resolvedCommand !== "help") {
+    const helpText = COMMAND_HELP[resolvedCommand];
     if (helpText) {
       output.info(helpText);
     } else {
@@ -258,13 +282,12 @@ export async function main(argv: string[]): Promise<void> {
     return;
   }
 
-  // Resolve command aliases
-  const resolvedCommand = resolveAlias(command);
-
   switch (resolvedCommand) {
     case "help":
-    case undefined:
       printHelp();
+      return;
+    case "browse":
+      await handleBrowse(flags, userConfig);
       return;
     case "init":
       await handleInit(flags, userConfig);
@@ -291,7 +314,7 @@ export async function main(argv: string[]): Promise<void> {
       await handleRun(positionals, flags, userConfig);
       return;
     case "ui":
-      await handleUi(flags, userConfig);
+      await handleWebUi(flags, userConfig);
       return;
     case "status":
       await handleStatus(flags, userConfig);
@@ -515,13 +538,12 @@ async function handleRun(positionals: string[], flags: CliFlags, userConfig: Use
   }
 }
 
-async function handleUi(flags: CliFlags, userConfig: UserConfig): Promise<void> {
+async function handleBrowse(flags: CliFlags, userConfig: UserConfig): Promise<void> {
   const options = commonOptions(flags, userConfig);
   const state = await getInstalledSkills(options);
-  const source = await resolveProjectSource(options);
 
   output.statusLine("Fetching catalog...");
-  const catalog = await loadCatalog({ ...source, ...cacheOptions(options) });
+  const catalog = await loadProjectCatalogs({ ...options, ...cacheOptions(options) });
   output.clearStatus();
 
   if (catalog.skills.length === 0) {
@@ -563,6 +585,17 @@ async function handleUi(flags: CliFlags, userConfig: UserConfig): Promise<void> 
     output.success(`Removed: ${removeResult.removedSkills.join(", ")}`);
   }
   printAutoSyncResult(installResult?.autoSync ?? removeResult?.autoSync ?? null);
+}
+
+async function handleWebUi(flags: CliFlags, userConfig: UserConfig): Promise<void> {
+  const options = commonOptions(flags, userConfig);
+  const session = await startWebUiServer(options);
+
+  output.success(`Skillex Web UI running at ${session.url}`);
+  if (!session.opened) {
+    output.warn("Could not open the browser automatically. Open the URL above manually.");
+  }
+  output.info("Press Ctrl+C to stop the local server.");
 }
 
 async function handleStatus(flags: CliFlags, userConfig: UserConfig): Promise<void> {
@@ -870,13 +903,17 @@ async function handleConfig(positionals: string[], flags: CliFlags): Promise<voi
 // Helpers
 // ---------------------------------------------------------------------------
 
-function resolveAlias(command: string | undefined): string | undefined {
+export function resolveCommandRoute(command: string | undefined): string {
   const ALIASES: Record<string, string> = {
     ls: "list",
     rm: "remove",
     uninstall: "remove",
+    tui: "browse",
   };
-  return command !== undefined ? (ALIASES[command] ?? command) : undefined;
+  if (command === undefined) {
+    return "browse";
+  }
+  return ALIASES[command] ?? command;
 }
 
 function commonOptions(flags: CliFlags, userConfig: UserConfig = {}): ProjectOptions {
@@ -995,6 +1032,7 @@ function printHelp(): void {
   output.info(`skillex — AI agent skill manager
 
 Commands:
+  skillex                                open the terminal browser
   skillex init [--repo owner/repo] [--ref main]
   skillex list [--json]
   skillex search [query] [--compatibility claude] [--tag git]
@@ -1002,10 +1040,11 @@ Commands:
   skillex install --all
   skillex update [skill-id...]
   skillex remove <skill-id...>           aliases: rm, uninstall
+  skillex browse                         aliases: tui
   skillex source <add|remove|list> [...]
   skillex sync [--adapter id] [--dry-run] [--mode copy]
   skillex run <skill-id:command> [--yes] [--timeout 30]
-  skillex ui
+  skillex ui                             open local Web UI
   skillex status [--json]
   skillex doctor [--json]
   skillex config set <key> <value>

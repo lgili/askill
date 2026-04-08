@@ -19,13 +19,13 @@ interface UiPrompts {
 }
 
 /**
- * Filters catalog skills for the interactive UI using a case-insensitive text query.
+ * Filters catalog skills for the interactive terminal browser using a case-insensitive text query.
  *
  * @param skills - Catalog skills.
  * @param query - Search text.
  * @returns Filtered skills in their original order.
  */
-export function filterCatalogForUi(skills: SkillManifest[], query: string): SkillManifest[] {
+export function filterCatalogForUi<T extends SkillManifest>(skills: T[], query: string): T[] {
   const normalized = query.trim().toLowerCase();
   if (!normalized) {
     return skills;
@@ -40,13 +40,13 @@ export function filterCatalogForUi(skills: SkillManifest[], query: string): Skil
 }
 
 /**
- * Runs the interactive terminal flow used by `skillex ui`.
+ * Runs the interactive terminal browser flow used by `skillex`, `skillex browse`, and `skillex tui`.
  *
  * @param options - UI state and optional prompt overrides.
  * @returns Selected, installable, and removable skill ids.
  */
-export async function runInteractiveUi(options: {
-  skills: SkillManifest[];
+export async function runInteractiveUi<T extends SkillManifest & { source?: { repo: string; label?: string | undefined } }>(options: {
+  skills: T[];
   installedIds: string[];
   prompts?: UiPrompts | undefined;
 }): Promise<{
@@ -75,9 +75,13 @@ export async function runInteractiveUi(options: {
           choices: filteredSkills.map((skill) => {
             const tags = (skill.tags ?? []).slice(0, 4).join(", ");
             const detail = tags || (skill.description ?? "").slice(0, 55);
+            const source =
+              skill.source && (skill.source.label || skill.source.repo)
+                ? `  ·  ${skill.source.label || skill.source.repo}`
+                : "";
             const label = detail
-              ? `${skill.name}  (${skill.id})  ·  ${detail}`
-              : `${skill.name}  (${skill.id})`;
+              ? `${skill.name}  (${skill.id})  ·  ${detail}${source}`
+              : `${skill.name}  (${skill.id})${source}`;
             return {
               name: label,
               value: skill.id,
