@@ -89,3 +89,48 @@ export function debug(message: string): void {
     process.stderr.write(applyColor("2", `[debug] ${message}`, process.stderr) + "\n");
   }
 }
+
+// ---------------------------------------------------------------------------
+// Progress and status helpers (TTY-only; fall back to plain lines otherwise)
+// ---------------------------------------------------------------------------
+
+/**
+ * Renders an inline progress bar that overwrites the current line.
+ * Prints a newline when current === total.
+ *
+ * @param current - Number of completed items (1-based).
+ * @param total - Total number of items.
+ * @param label - Short label shown after the bar.
+ */
+export function progress(current: number, total: number, label: string): void {
+  if (!process.stdout.isTTY) {
+    console.log(`[${current}/${total}] ${label}`);
+    return;
+  }
+  const filled = total > 0 ? Math.round((current / total) * 16) : 0;
+  const bar = applyColor("32", "█".repeat(filled), process.stdout) + "░".repeat(16 - filled);
+  const counter = applyColor("2", `${current}/${total}`, process.stdout);
+  const line = `  [${bar}] ${counter}  ${label}`;
+  process.stdout.write(`\r${line}\x1b[K`);
+  if (current === total) {
+    process.stdout.write("\n");
+  }
+}
+
+/**
+ * Writes a transient status message on the current line (overwritable with clearStatus).
+ *
+ * @param message - Status message to display.
+ */
+export function statusLine(message: string): void {
+  if (!process.stdout.isTTY) return;
+  process.stdout.write(`\r  ${applyColor("2", message, process.stdout)}\x1b[K`);
+}
+
+/**
+ * Clears the current status line written by {@link statusLine}.
+ */
+export function clearStatus(): void {
+  if (!process.stdout.isTTY) return;
+  process.stdout.write("\r\x1b[K");
+}

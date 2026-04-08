@@ -426,14 +426,10 @@ async function handleInstall(positionals: string[], flags: CliFlags, userConfig:
   const result = await installSkills(positionals, {
     ...opts,
     installAll,
-    onProgress: (current, total, skillId) => {
-      output.info(`[${current}/${total}] Installing ${skillId}...`);
-    },
+    onProgress: (current, total, skillId) => output.progress(current, total, skillId),
   });
 
-  output.success(
-    `Installed ${result.installedCount} skill(s) to ${result.statePaths.scope} state at ${result.statePaths.stateDir}`,
-  );
+  output.success(`Installed ${result.installedCount} skill(s)`);
   for (const skill of result.installedSkills) {
     output.info(`  + ${skill.id}@${skill.version}`);
   }
@@ -442,7 +438,10 @@ async function handleInstall(positionals: string[], flags: CliFlags, userConfig:
 
 async function handleUpdate(positionals: string[], flags: CliFlags, userConfig: UserConfig): Promise<void> {
   const opts = commonOptions(flags, userConfig);
-  const result = await updateInstalledSkills(positionals, opts);
+  const result = await updateInstalledSkills(positionals, {
+    ...opts,
+    onProgress: (current, total, skillId) => output.progress(current, total, skillId),
+  });
 
   if (result.updatedSkills.length === 0) {
     output.info("No skills updated.");
@@ -515,7 +514,10 @@ async function handleUi(flags: CliFlags, userConfig: UserConfig): Promise<void> 
   const options = commonOptions(flags, userConfig);
   const state = await getInstalledSkills(options);
   const source = await resolveProjectSource(options);
+
+  output.statusLine("Fetching catalog...");
   const catalog = await loadCatalog({ ...source, ...cacheOptions(options) });
+  output.clearStatus();
 
   if (catalog.skills.length === 0) {
     output.info("No skills available in the catalog.");
@@ -535,7 +537,12 @@ async function handleUi(flags: CliFlags, userConfig: UserConfig): Promise<void> 
   }
 
   const installResult =
-    selection.toInstall.length > 0 ? await installSkills(selection.toInstall, options) : null;
+    selection.toInstall.length > 0
+      ? await installSkills(selection.toInstall, {
+          ...options,
+          onProgress: (current, total, skillId) => output.progress(current, total, skillId),
+        })
+      : null;
   const removeResult =
     selection.toRemove.length > 0 ? await removeSkills(selection.toRemove, options) : null;
 
@@ -544,13 +551,13 @@ async function handleUi(flags: CliFlags, userConfig: UserConfig): Promise<void> 
     return;
   }
 
-  output.success("UI summary:");
   if (installResult) {
-    output.info(`  Installed : ${installResult.installedSkills.map((s) => s.id).join(", ")}`);
+    output.success(`Installed: ${installResult.installedSkills.map((s) => s.id).join(", ")}`);
   }
   if (removeResult) {
-    output.info(`  Removed   : ${removeResult.removedSkills.join(", ")}`);
+    output.success(`Removed: ${removeResult.removedSkills.join(", ")}`);
   }
+  printAutoSyncResult(installResult?.autoSync ?? removeResult?.autoSync ?? null);
 }
 
 async function handleStatus(flags: CliFlags, userConfig: UserConfig): Promise<void> {

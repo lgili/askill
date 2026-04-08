@@ -9,7 +9,12 @@ interface UiChoice {
 interface UiPrompts {
   input?: ((options: { message: string; default?: string | undefined }) => Promise<string>) | undefined;
   checkbox?:
-    | ((options: { message: string; instructions?: string | undefined; choices: UiChoice[] }) => Promise<string[]>)
+    | ((options: {
+        message: string;
+        instructions?: string | undefined;
+        pageSize?: number | undefined;
+        choices: UiChoice[];
+      }) => Promise<string[]>)
     | undefined;
 }
 
@@ -64,13 +69,21 @@ export async function runInteractiveUi(options: {
     filteredSkills.length === 0
       ? []
       : await (prompts.checkbox || fallbackCheckbox)({
-          message: "Selecione as skills",
-          instructions: "Type to filter first • Space to select • Enter to install",
-          choices: filteredSkills.map((skill) => ({
-            name: `${skill.name} (${skill.id}) - ${skill.description || "Sem descricao"} [${skill.compatibility.join(",") || "sem-compat"}]`,
-            value: skill.id,
-            checked: installedSet.has(skill.id),
-          })),
+          message: "Select skills",
+          instructions: "↑↓ navigate  ·  space select  ·  enter confirm  ·  type to filter",
+          pageSize: 12,
+          choices: filteredSkills.map((skill) => {
+            const tags = (skill.tags ?? []).slice(0, 4).join(", ");
+            const detail = tags || (skill.description ?? "").slice(0, 55);
+            const label = detail
+              ? `${skill.name}  (${skill.id})  ·  ${detail}`
+              : `${skill.name}  (${skill.id})`;
+            return {
+              name: label,
+              value: skill.id,
+              checked: installedSet.has(skill.id),
+            };
+          }),
         });
 
   const selectedSet = new Set(selectedIds);
@@ -98,6 +111,7 @@ async function loadPromptAdapters(): Promise<Required<UiPrompts>> {
       prompts.checkbox({
         message: options.message,
         ...(options.instructions ? { instructions: options.instructions } : {}),
+        ...(options.pageSize !== undefined ? { pageSize: options.pageSize } : {}),
         choices: options.choices.map((choice) => ({
           name: choice.name,
           value: choice.value,
