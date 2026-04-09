@@ -1,0 +1,37 @@
+{
+  "id": "research-wikipedia",
+  "name": "Research Wikipedia",
+  "version": "1.0.0",
+  "description": "Search and retrieve structured content from Wikipedia using the free REST API — no API key required. Fetches article summaries, full section text, infobox data, and related links. Activates when you say 'search Wikipedia', 'look up on Wikipedia', 'what does Wikipedia say about', 'get Wikipedia summary', 'find Wikipedia article', or 'research topic using Wikipedia'.",
+  "author": "lgili",
+  "tags": [
+    "research",
+    "wikipedia",
+    "search",
+    "knowledge",
+    "encyclopedia",
+    "free",
+    "no-api-key",
+    "summary",
+    "lookup"
+  ],
+  "compatibility": [
+    "codex",
+    "copilot",
+    "cline",
+    "cursor",
+    "claude",
+    "gemini",
+    "windsurf"
+  ],
+  "entry": "SKILL.md",
+  "files": [
+    "SKILL.md",
+    "references/wikipedia-api.md",
+    "references/search-strategies.md",
+    "scripts/wikipedia_search.py"
+  ],
+  "scripts": {
+    "search": "python skills/research-wikipedia/scripts/wikipedia_search.py"
+  }
+}

@@ -1,0 +1,38 @@
+{
+  "id": "research-arxiv",
+  "name": "Research ArXiv",
+  "version": "1.0.0",
+  "description": "Search and summarize preprint papers from ArXiv.org using the free Atom API — no API key required. Retrieves paper titles, authors, abstracts, submission dates, and PDF links for any research query. Activates when you say 'search ArXiv', 'find papers about', 'what are recent papers on', 'search academic papers', 'find preprints about', or 'look up research on ArXiv'.",
+  "author": "lgili",
+  "tags": [
+    "research",
+    "arxiv",
+    "academic",
+    "papers",
+    "preprints",
+    "search",
+    "science",
+    "free",
+    "no-api-key",
+    "literature"
+  ],
+  "compatibility": [
+    "codex",
+    "copilot",
+    "cline",
+    "cursor",
+    "claude",
+    "gemini",
+    "windsurf"
+  ],
+  "entry": "SKILL.md",
+  "files": [
+    "SKILL.md",
+    "references/arxiv-api.md",
+    "references/arxiv-categories.md",
+    "scripts/arxiv_search.py"
+  ],
+  "scripts": {
+    "search": "python skills/research-arxiv/scripts/arxiv_search.py"
+  }
+}

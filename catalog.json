@@ -74,6 +74,21 @@
     },
     {
       "id": "waveform-analysis"
+    },
+    {
+      "id": "research-arxiv"
+    },
+    {
+      "id": "research-pubmed"
+    },
+    {
+      "id": "research-wikipedia"
+    },
+    {
+      "id": "web-scraper"
+    },
+    {
+      "id": "web-search"
     }
   ]
 }

@@ -1,0 +1,37 @@
+{
+  "id": "web-search",
+  "name": "Web Search",
+  "version": "1.0.0",
+  "description": "General-purpose web search using DuckDuckGo — no API key, no registration, no payment required. Returns organic search results with titles, URLs, and snippets for any query. Activates when you say 'search the web for', 'look this up online', 'find current information about', 'search for recent news on', 'web search for', or 'find on the internet'.",
+  "author": "lgili",
+  "tags": [
+    "research",
+    "web-search",
+    "duckduckgo",
+    "search",
+    "internet",
+    "free",
+    "no-api-key",
+    "current",
+    "news"
+  ],
+  "compatibility": [
+    "codex",
+    "copilot",
+    "cline",
+    "cursor",
+    "claude",
+    "gemini",
+    "windsurf"
+  ],
+  "entry": "SKILL.md",
+  "files": [
+    "SKILL.md",
+    "references/duckduckgo-api.md",
+    "references/search-query-craft.md",
+    "scripts/web_search.py"
+  ],
+  "scripts": {
+    "search": "python skills/web-search/scripts/web_search.py"
+  }
+}

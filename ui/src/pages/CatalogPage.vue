@@ -14,11 +14,14 @@ const CATEGORIES = [
   { id: "testing",     name: "Testing",     icon: "🧪" },
   { id: "security",    name: "Security",    icon: "🛡️" },
   { id: "devops",      name: "DevOps",      icon: "🐳" },
+  { id: "research",    name: "Research",    icon: "🔍" },
   { id: "tools",       name: "Tools",       icon: "🔧" },
 ];
 
 function inferCategory(id: string, tags: string[]): string {
   const all = [id, ...tags].map(s => s.toLowerCase()).join(" ");
+  // Research: Wikipedia, ArXiv, PubMed, web search, web scraping
+  if (/wikipedia|arxiv|pubmed|ncbi|duckduckgo|web-search|web-scraper|research-wikipedia|research-arxiv|research-pubmed/.test(all)) return "research";
   // Engineering: power electronics, circuits, numerical solvers, waveform analysis, schematics
   if (/simulation|mna|z-domain|magnetics|mosfet|igbt|waveform|fft|thd|newton-raphson|psim|schematic|netlist|altium|datasheet|curve-digitization|semiconductor/.test(all)) return "engineering";
   // Code: programming languages and code-quality skills

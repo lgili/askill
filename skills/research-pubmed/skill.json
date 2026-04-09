@@ -1,0 +1,39 @@
+{
+  "id": "research-pubmed",
+  "name": "Research PubMed",
+  "version": "1.0.0",
+  "description": "Search peer-reviewed biomedical and scientific literature from the NCBI PubMed database using the free E-utilities API — no API key required. Returns article titles, authors, journal, abstract, DOI, and PubMed IDs. Activates when you say 'search PubMed', 'find medical research on', 'look up clinical studies about', 'search biomedical literature', 'find scientific papers on', or 'get NCBI articles about'.",
+  "author": "lgili",
+  "tags": [
+    "research",
+    "pubmed",
+    "ncbi",
+    "biomedical",
+    "science",
+    "academic",
+    "medical",
+    "literature",
+    "search",
+    "free",
+    "no-api-key"
+  ],
+  "compatibility": [
+    "codex",
+    "copilot",
+    "cline",
+    "cursor",
+    "claude",
+    "gemini",
+    "windsurf"
+  ],
+  "entry": "SKILL.md",
+  "files": [
+    "SKILL.md",
+    "references/pubmed-api.md",
+    "references/pubmed-query-syntax.md",
+    "scripts/pubmed_search.py"
+  ],
+  "scripts": {
+    "search": "python skills/research-pubmed/scripts/pubmed_search.py"
+  }
+}
