@@ -7,10 +7,16 @@
       "id": "c-pro"
     },
     {
+      "id": "circuit-solver"
+    },
+    {
       "id": "code-review"
     },
     {
       "id": "commit-craft"
+    },
+    {
+      "id": "control-loop"
     },
     {
       "id": "cpp-pro"
@@ -19,16 +25,40 @@
       "id": "create-skills"
     },
     {
+      "id": "datasheet-intelligence"
+    },
+    {
       "id": "error-handling"
     },
     {
       "id": "latex-pro"
     },
     {
+      "id": "magnetic-components"
+    },
+    {
+      "id": "pdf-reader"
+    },
+    {
+      "id": "power-electronics"
+    },
+    {
       "id": "python-pro"
     },
     {
+      "id": "schematic-intelligence"
+    },
+    {
       "id": "secure-defaults"
+    },
+    {
+      "id": "semiconductor-models"
+    },
+    {
+      "id": "simulation-verification"
+    },
+    {
+      "id": "solver-numerics"
     },
     {
       "id": "technical-writing-pro"
@@ -41,6 +71,9 @@
     },
     {
       "id": "ux-ui-pro"
+    },
+    {
+      "id": "waveform-analysis"
     }
   ]
 }

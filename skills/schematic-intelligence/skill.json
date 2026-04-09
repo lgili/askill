@@ -1,0 +1,41 @@
+{
+  "id": "schematic-intelligence",
+  "name": "Schematic Intelligence",
+  "version": "1.0.0",
+  "description": "Electronic schematic understanding specialist for Altium Designer projects. Parses netlists and BOMs to extract components, nets, hierarchical sheet connections, and functional block topology — reasoning about the design like an experienced electronics engineer. Activates when you say 'analyze schematic', 'read Altium project', 'parse netlist', 'understand circuit', 'list components', 'trace net', 'find connections', 'analyze PCB design', or 'review schematic hierarchy'.",
+  "author": "lgili",
+  "tags": [
+    "schematic",
+    "altium",
+    "netlist",
+    "electronics",
+    "circuit",
+    "bom",
+    "pcb",
+    "hierarchy",
+    "simulation",
+    "cpp"
+  ],
+  "compatibility": [
+    "codex",
+    "copilot",
+    "cline",
+    "cursor",
+    "claude",
+    "gemini",
+    "windsurf"
+  ],
+  "entry": "SKILL.md",
+  "files": [
+    "SKILL.md",
+    "references/altium-netlist-format.md",
+    "references/circuit-hierarchy.md",
+    "references/bom-analysis.md",
+    "scripts/parse_netlist.py",
+    "scripts/analyze_circuit.py"
+  ],
+  "scripts": {
+    "parse": "python skills/schematic-intelligence/scripts/parse_netlist.py",
+    "analyze": "python skills/schematic-intelligence/scripts/analyze_circuit.py"
+  }
+}

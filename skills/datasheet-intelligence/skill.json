@@ -1,0 +1,43 @@
+{
+  "id": "datasheet-intelligence",
+  "name": "Datasheet Intelligence",
+  "version": "1.0.0",
+  "description": "Datasheet mining specialist for electronic components. Extracts parameter tables (absolute maximum ratings, electrical characteristics), digitizes I-V curves and transfer functions from graph images, and exports data to CSV/JSON for use in simulations and calculations. Activates when you say 'read datasheet', 'extract parameters from datasheet', 'digitize curve', 'get I-V curve data', 'extract electrical characteristics', 'get operating conditions', or 'parse component datasheet'.",
+  "author": "lgili",
+  "tags": [
+    "datasheet",
+    "pdf",
+    "parameters",
+    "curve-digitization",
+    "electronics",
+    "component",
+    "table-extraction",
+    "simulation",
+    "matplotlib",
+    "pillow"
+  ],
+  "compatibility": [
+    "codex",
+    "copilot",
+    "cline",
+    "cursor",
+    "claude",
+    "gemini",
+    "windsurf"
+  ],
+  "entry": "SKILL.md",
+  "files": [
+    "SKILL.md",
+    "references/datasheet-structure.md",
+    "references/curve-digitization.md",
+    "references/data-export-formats.md",
+    "scripts/extract_datasheet_tables.py",
+    "scripts/digitize_curve.py",
+    "scripts/generate_curve_plot.py"
+  ],
+  "scripts": {
+    "extract-tables": "python skills/datasheet-intelligence/scripts/extract_datasheet_tables.py",
+    "digitize": "python skills/datasheet-intelligence/scripts/digitize_curve.py",
+    "plot": "python skills/datasheet-intelligence/scripts/generate_curve_plot.py"
+  }
+}

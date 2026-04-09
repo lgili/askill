@@ -19,15 +19,15 @@ const CATEGORIES = [
 
 function inferCategory(id: string, tags: string[]): string {
   const all = [id, ...tags].map(s => s.toLowerCase()).join(" ");
-  // Engineering: power electronics, circuits, numerical solvers, waveform analysis
-  if (/simulation|mna|z-domain|magnetics|mosfet|igbt|waveform|fft|thd|newton-raphson|psim/.test(all)) return "engineering";
+  // Engineering: power electronics, circuits, numerical solvers, waveform analysis, schematics
+  if (/simulation|mna|z-domain|magnetics|mosfet|igbt|waveform|fft|thd|newton-raphson|psim|schematic|netlist|altium|datasheet|curve-digitization|semiconductor/.test(all)) return "engineering";
   // Code: programming languages and code-quality skills
   if (/typescript|python|cpp-pro|c-pro|code-review|error-handling/.test(all)) return "code";
   if (/git|commit|workflow|branch/.test(all)) return "workflow";
   if (/test|jest|tdd|vitest|spec/.test(all))  return "testing";
   if (/security|owasp|audit|guard/.test(all)) return "security";
   if (/docker|devops|ci|cd|helm/.test(all))   return "devops";
-  if (/scraper|tool|docs|web/.test(all))       return "tools";
+  if (/pdf|extraction|document|scraper|tool|docs|web/.test(all)) return "tools";
   return "other";
 }
 

@@ -1,0 +1,40 @@
+{
+  "id": "pdf-reader",
+  "name": "PDF Reader",
+  "version": "1.0.0",
+  "description": "PDF extraction specialist for text, tables, and embedded images. Converts digital PDFs into clean Markdown text, GFM tables, and PNG image exports. Activates when you say 'read this PDF', 'extract text from PDF', 'get tables from PDF', 'export images from PDF', 'convert PDF to markdown', or 'parse PDF document'.",
+  "author": "lgili",
+  "tags": [
+    "pdf",
+    "extraction",
+    "text",
+    "tables",
+    "images",
+    "markdown",
+    "document",
+    "pdfplumber",
+    "pymupdf"
+  ],
+  "compatibility": [
+    "codex",
+    "copilot",
+    "cline",
+    "cursor",
+    "claude",
+    "gemini",
+    "windsurf"
+  ],
+  "entry": "SKILL.md",
+  "files": [
+    "SKILL.md",
+    "references/pdf-formats.md",
+    "references/table-extraction.md",
+    "references/image-extraction.md",
+    "scripts/pdf_extract_text.py",
+    "scripts/pdf_extract_images.py"
+  ],
+  "scripts": {
+    "extract-text": "python skills/pdf-reader/scripts/pdf_extract_text.py",
+    "extract-images": "python skills/pdf-reader/scripts/pdf_extract_images.py"
+  }
+}
