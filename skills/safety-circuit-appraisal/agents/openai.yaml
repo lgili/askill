@@ -1,0 +1,7 @@
+interface:
+  display_name: "Safety Circuit Appraisal"
+  short_description: "Performs a safety circuit appraisal based on schematics and B..."
+  default_prompt: "Use $safety-circuit-appraisal to help me with this task."
+
+policy:
+  allow_implicit_invocation: true

@@ -9,6 +9,23 @@
 
 ---
 
+## Getting Started with the Web UI (Recommended)
+
+The easiest way to browse, install, and manage your AI skills is through the interactive Web UI. This provides a user-friendly interface for all Skillex functionalities.
+
+To launch the Web UI, simply run:
+
+```bash
+skillex ui
+```
+
+This will open the Skillex application in your default web browser.
+
+> ![Skillex Web UI Screenshot](images/skillex-ui-screenshot.png)
+> *(Please replace this placeholder image with an actual screenshot of the Skillex Web UI)*
+
+---
+
 ## Table of Contents
 
 - [Quick Start](#quick-start)

@@ -1,0 +1,33 @@
+{
+  "id": "safety-circuit-appraisal",
+  "name": "Safety Circuit Appraisal",
+  "version": "0.1.0",
+  "description": "Performs a safety circuit appraisal based on schematics and Bill of Materials (BOM). This skill orchestrates other skills to analyze potential failure modes (short/open circuits) under single-fault conditions and evaluates compliance with safety standards. Activates when the user asks to perform a 'safety circuit appraisal', 'single fault analysis', or 'evaluate circuit safety for certification'.",
+  "author": "lgili",
+  "tags": [
+    "electronics",
+    "safety",
+    "hardware",
+    "FMEA",
+    "certification",
+    "schematic"
+  ],
+  "compatibility": [
+    "codex",
+    "copilot",
+    "cline",
+    "cursor",
+    "claude",
+    "gemini",
+    "windsurf"
+  ],
+  "entry": "SKILL.md",
+  "files": [
+    "SKILL.md",
+    "agents/openai.yaml",
+    "references/introduction-to-safety-appraisal.md",
+    "references/identifying-safety-critical-components.md",
+    "references/single-fault-analysis-methods.md",
+    "references/generating-the-report.md"
+  ]
+}

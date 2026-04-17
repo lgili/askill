@@ -46,6 +46,18 @@
       "id": "python-pro"
     },
     {
+      "id": "research-arxiv"
+    },
+    {
+      "id": "research-pubmed"
+    },
+    {
+      "id": "research-wikipedia"
+    },
+    {
+      "id": "safety-circuit-appraisal"
+    },
+    {
       "id": "schematic-intelligence"
     },
     {
@@ -53,6 +65,12 @@
     },
     {
       "id": "semiconductor-models"
+    },
+    {
+      "id": "senior-data-engineer"
+    },
+    {
+      "id": "senior-data-scientist"
     },
     {
       "id": "simulation-verification"
@@ -76,25 +94,10 @@
       "id": "waveform-analysis"
     },
     {
-      "id": "research-arxiv"
-    },
-    {
-      "id": "research-pubmed"
-    },
-    {
-      "id": "research-wikipedia"
-    },
-    {
       "id": "web-scraper"
     },
     {
       "id": "web-search"
-    },
-    {
-      "id": "senior-data-engineer"
-    },
-    {
-      "id": "senior-data-scientist"
     }
   ]
 }
