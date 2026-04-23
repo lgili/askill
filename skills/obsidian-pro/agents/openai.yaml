@@ -1,0 +1,7 @@
+interface:
+  display_name: "Obsidian Pro"
+  short_description: "A powerful skill to help you use Obsidian. It helps you to ma..."
+  default_prompt: "Use $obsidian-pro to help me with this task."
+
+policy:
+  allow_implicit_invocation: true

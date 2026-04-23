@@ -1,0 +1,31 @@
+{
+  "id": "obsidian-pro",
+  "name": "Obsidian Pro",
+  "version": "0.1.0",
+  "description": "A powerful skill to help you use Obsidian. It helps you to manage your notes, tasks, and knowledge. Activates when you say 'obsidian', 'obsidian pro', or 'obsidian skill'.",
+  "author": "lgili",
+  "tags": [
+    "obsidian",
+    "notes",
+    "knowledge management",
+    "tasks"
+  ],
+  "compatibility": [
+    "codex",
+    "copilot",
+    "cline",
+    "cursor",
+    "claude",
+    "gemini",
+    "windsurf"
+  ],
+  "entry": "SKILL.md",
+  "files": [
+    "SKILL.md",
+    "agents/openai.yaml",
+    "references/obsidian-basics.md",
+    "references/obsidian-dataview.md",
+    "references/obsidian-templater.md",
+    "references/obsidian-automation.md"
+  ]
+}

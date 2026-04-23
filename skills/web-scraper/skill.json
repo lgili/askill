@@ -1,7 +1,7 @@
 {
   "id": "web-scraper",
   "name": "Web Scraper",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Fetch and extract structured content from any public web page — no API key or external service required. Extracts clean text, tables (as CSV/Markdown), links, headings, and images metadata using Python stdlib plus optional beautifulsoup4. Activates when you say 'scrape this page', 'extract content from URL', 'fetch web page content', 'get data from website', 'parse HTML from URL', or 'extract table from web page'.",
   "author": "lgili",
   "tags": [
@@ -31,9 +31,9 @@
     "SKILL.md",
     "references/html-extraction.md",
     "references/scraping-ethics.md",
-    "scripts/scrape_page.py"
+    "scripts/web_scrape.py"
   ],
   "scripts": {
-    "scrape": "python skills/web-scraper/scripts/scrape_page.py"
+    "scrape": "python skills/web-scraper/scripts/web_scrape.py"
   }
 }
