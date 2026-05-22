@@ -1,0 +1,46 @@
+{
+  "id": "component-spec-extractor",
+  "name": "Component Spec Extractor",
+  "version": "0.1.0",
+  "category": "engineering",
+  "description": "Component-aware datasheet extraction planner for electronic parts. For a given component type (MOSFET, IGBT, diode, BJT, op-amp, LDO, switching regulator, capacitor, inductor, gate driver, ...), emits the canonical list of parameters to pull from the datasheet and the characteristic curves to digitize, with axes, scale, and test conditions. Orchestrates datasheet-intelligence and feeds semiconductor-models, power-electronics, magnetic-components, circuit-solver, simulation-verification, and safety-circuit-appraisal.",
+  "author": "lgili",
+  "tags": [
+    "electronics",
+    "datasheet",
+    "components",
+    "extraction",
+    "mosfet",
+    "igbt",
+    "diode",
+    "opamp",
+    "passives",
+    "simulation",
+    "characterization"
+  ],
+  "compatibility": [
+    "codex",
+    "copilot",
+    "cline",
+    "cursor",
+    "claude",
+    "gemini",
+    "windsurf"
+  ],
+  "entry": "SKILL.md",
+  "files": [
+    "SKILL.md",
+    "references/profiles-mosfet.md",
+    "references/profiles-igbt.md",
+    "references/profiles-diode.md",
+    "references/profiles-opamp.md",
+    "references/profiles-bjt.md",
+    "references/profiles-regulator.md",
+    "references/profiles-passive.md",
+    "references/profiles-mcu-misc.md",
+    "scripts/plan_extraction.py"
+  ],
+  "scripts": {
+    "plan": "python scripts/plan_extraction.py"
+  }
+}
